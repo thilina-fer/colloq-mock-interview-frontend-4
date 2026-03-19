@@ -1,11 +1,9 @@
-import React from 'react'
-import Logo from './component/auth/Login'
-import AppRouter from './Routing/AppRouter'
+import React from "react";
+import Logo from "./pages/auth/Login";
+import AppRouter from "./Routing/AppRouter";
 
 function App() {
-  return (
-   <AppRouter />
-  )
+  return <AppRouter />;
 }
 
-export default App
+export default App;
