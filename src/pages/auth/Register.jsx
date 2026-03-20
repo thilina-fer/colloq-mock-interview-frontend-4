@@ -23,7 +23,6 @@ const Register = () => {
   const [isInterviewerPopupOpen, setIsInterviewerPopupOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Form states
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -32,13 +31,10 @@ const Register = () => {
 
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
-
-    // Password match වෙනවාදැයි බැලීම
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-
     if (role === "candidate") {
       setIsCandidatePopupOpen(true);
     } else {
@@ -57,13 +53,17 @@ const Register = () => {
   };
 
   const handleInterviewerComplete = (profileData) => {
+    // 1. එකතු කරගත් සියලු දත්ත එකම object එකකට ගැනීම
     const finalUserData = {
       name: formData.username,
       ...profileData,
-      role: "interviewer",
+      role: "interviewer", // Role එක මෙතනදී add වෙනවා
     };
+    // 2. LocalStorage එකේ Save කිරීම
     localStorage.setItem("currentUser", JSON.stringify(finalUserData));
-    navigate("/interviewer-dashboard");
+
+    // 3. Interviewer Dashboard එකට Navigate කිරීම
+    navigate("/dashboard/interviewer");
   };
 
   return (
@@ -73,7 +73,6 @@ const Register = () => {
         .animate-content { animation: fadeSlideUp 0.8s ease-out forwards; }
       `}</style>
 
-      {/* Popups */}
       <CandidateProfileComplete
         isOpen={isCandidatePopupOpen}
         onClose={() => setIsCandidatePopupOpen(false)}
@@ -126,7 +125,6 @@ const Register = () => {
             </p>
           </div>
 
-          {/* Role Selection */}
           <div className="flex gap-4 mb-8">
             <button
               type="button"
@@ -154,7 +152,6 @@ const Register = () => {
                 Candidate
               </span>
             </button>
-
             <button
               type="button"
               onClick={() => setRole("interviewer")}
@@ -189,7 +186,6 @@ const Register = () => {
           </div>
 
           <form className="space-y-4" onSubmit={handleRegisterSubmit}>
-            {/* Username */}
             <div>
               <label
                 className="text-sm font-bold ml-1 mb-1 block"
@@ -214,8 +210,6 @@ const Register = () => {
                 />
               </div>
             </div>
-
-            {/* Password */}
             <div>
               <label
                 className="text-sm font-bold ml-1 mb-1 block"
@@ -225,23 +219,23 @@ const Register = () => {
               </label>
               <div className="relative group/input">
                 <LockOutlinedIcon
-                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within/input:opacity-100 group-focus-within/input:text-orange-500 transition-all"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within/input:opacity-100 transition-all"
                   sx={{ fontSize: 20 }}
                 />
                 <input
                   required
                   type={showPassword ? "text" : "password"}
-                  placeholder="Create a password"
+                  placeholder="Create password"
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
                   }
-                  className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                  className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30 hover:opacity-100"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30"
                 >
                   {showPassword ? (
                     <VisibilityOffIcon sx={{ fontSize: 20 }} />
@@ -251,8 +245,6 @@ const Register = () => {
                 </button>
               </div>
             </div>
-
-            {/* Confirm Password */}
             <div>
               <label
                 className="text-sm font-bold ml-1 mb-1 block"
@@ -276,36 +268,32 @@ const Register = () => {
                       confirmPassword: e.target.value,
                     })
                   }
-                  className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                  className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                 />
               </div>
             </div>
-
             <button
               type="submit"
-              className="w-full py-4 mt-2 rounded-xl font-bold text-white shadow-lg transition-all hover:translate-y-[-2px] active:scale-[0.98]"
+              className="w-full py-4 mt-2 rounded-xl font-bold text-white shadow-lg transition-all hover:translate-y-[-2px]"
               style={{ backgroundColor: colors.primary }}
             >
-              Sign Up as {role.charAt(0).toUpperCase() + role.slice(1)}
+              Sign Up as {role.charAt(0).toUpperCase() + role.slice(1)}{" "}
               <HowToRegIcon fontSize="small" className="ml-1" />
             </button>
           </form>
 
-          {/* Social Auth & Footer */}
-          <div className="mt-6 flex items-center justify-center gap-4 text-center">
-            <p
-              className="text-sm font-medium"
-              style={{ color: colors.gray.medium }}
+          <div
+            className="mt-8 text-center text-sm font-medium"
+            style={{ color: colors.gray.medium }}
+          >
+            Already have an account?{" "}
+            <button
+              onClick={() => navigate("/login")}
+              className="ml-2 font-bold"
+              style={{ color: colors.primary }}
             >
-              Already have an account?{" "}
-              <button
-                onClick={() => navigate("/login")}
-                className="ml-1 font-bold"
-                style={{ color: colors.primary }}
-              >
-                Log in
-              </button>
-            </p>
+              Log in
+            </button>
           </div>
         </div>
       </div>
