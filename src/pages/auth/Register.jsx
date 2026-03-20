@@ -40,7 +40,6 @@ const Register = () => {
       return;
     }
 
-    // Role එක අනුව අදාළ Profile Completion Popup එක විවෘත කරයි
     if (role === "candidate") {
       setIsCandidatePopupOpen(true);
     } else {
@@ -48,72 +47,96 @@ const Register = () => {
     }
   };
 
-  // --- Candidate Registration & Profile Completion Flow ---
+  // --- Common Registration & Login Logic ---
+  const registerAndGetToken = async (targetRole) => {
+    console.log(`Step 1: Registering User as ${targetRole}...`);
+    await AuthService.register({
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+      role: targetRole,
+    });
+
+    console.log("Step 2: Logging in to get Token...");
+    const loginRes = await AuthService.login({
+      username: formData.username,
+      password: formData.password,
+    });
+
+    // ඔබ සොයාගත් පරිදි 'accessToken' හරහා Token එක ලබා ගනී
+    const token =
+      loginRes?.accessToken ||
+      (typeof loginRes === "string" ? loginRes : loginRes?.data?.accessToken);
+
+    if (!token) {
+      throw new Error("Login successful but valid accessToken not received!");
+    }
+
+    return token;
+  };
+
+  // --- Candidate Flow ---
   const handleCandidateComplete = async (profileData) => {
     setLoading(true);
     try {
-      // පියවර 1: User Account එක Register කිරීම (Returns String message)
-      console.log("Step 1: Registering User Account...");
-      await AuthService.register({
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        role: "CANDIDATE",
-      });
+      const token = await registerAndGetToken("CANDIDATE");
 
-      // පියවර 2: JWT Token එක ලබා ගැනීමට Login වීම (Returns AuthResponseDTO)
-      console.log("Step 2: Logging in to get Token...");
-      const loginRes = await AuthService.login({
-        username: formData.username,
-        password: formData.password,
-      });
-
-      // Token එක Extract කිරීම (Object හෝ String ලෙස පරීක්ෂා කරයි)
-      const token =
-        loginRes?.accessToken ||
-        (typeof loginRes === "string" ? loginRes : loginRes?.data?.accessToken);
-
-      console.log("Token Sync Check:", token);
-
-      if (!token) {
-        throw new Error(
-          "Login successful but valid Token not received from backend!",
-        );
-      }
-
-      // පියවර 3: Candidate Profile එක සම්පූර්ණ කිරීම
-      console.log("Step 3: Completing Profile...");
+      console.log("Step 3: Completing Candidate Profile...");
       const profileDTO = {
         bio: profileData.bio,
         githubUrl: profileData.github,
         linkedinUrl: profileData.linkedin,
-        profilePicture: "https://example.com/default.jpg", // Default අගයක් ලෙස
+        profilePicture: "https://example.com/default-candidate.jpg",
         status: "ACTIVE",
       };
 
-      // 403 Forbidden වැළැක්වීමට කෙලින්ම Token එක Header එකට Inject කරයි
       await AuthService.completeCandidateProfile(profileDTO, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      alert("Registration and Profile Setup Successful!");
+      alert("Candidate Registration Successful!");
       navigate("/dashboard/candidate");
     } catch (err) {
-      console.error("Full Error Details:", err);
-      const errorMsg =
-        err.response?.data?.message || err.message || "An error occurred.";
-      alert("Error: " + errorMsg);
+      console.error("Candidate Reg Error:", err);
+      alert("Error: " + (err.response?.data?.message || err.message));
     } finally {
       setLoading(false);
       setIsCandidatePopupOpen(false);
     }
   };
 
-  const handleInterviewerComplete = (profileData) => {
-    alert("Interviewer registration feature is coming soon!");
-    setIsInterviewerPopupOpen(false);
+  // --- Interviewer Flow ---
+  const handleInterviewerComplete = async (profileData) => {
+    setLoading(true);
+    try {
+      const token = await registerAndGetToken("INTERVIEWER");
+
+      console.log("Step 3: Completing Interviewer Profile...");
+      const profileDTO = {
+        bio: profileData.bio,
+        company: profileData.company,
+        designation: profileData.designation,
+        experienceYears: parseInt(profileData.experienceYears),
+        specialization: profileData.specialization,
+        githubUrl: profileData.github,
+        linkedinUrl: profileData.linkedin,
+        profilePicture: "https://example.com/default-interviewer.jpg",
+      };
+
+      // Interviewer profile එක සඳහා වෙනම AuthService method එකක් භාවිතා කළ හැක
+      await AuthService.completeInterviewerProfile(profileDTO, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      alert("Interviewer Registration Successful!");
+      navigate("/dashboard/interviewer");
+    } catch (err) {
+      console.error("Interviewer Reg Error:", err);
+      alert("Error: " + (err.response?.data?.message || err.message));
+    } finally {
+      setLoading(false);
+      setIsInterviewerPopupOpen(false);
+    }
   };
 
   return (
@@ -176,6 +199,7 @@ const Register = () => {
             </p>
           </div>
 
+          {/* Role Tabs */}
           <div className="flex gap-4 mb-8">
             <button
               type="button"
@@ -330,9 +354,7 @@ const Register = () => {
               className={`w-full py-4 mt-2 rounded-xl font-bold text-white shadow-lg transition-all ${loading ? "opacity-70 cursor-not-allowed" : "hover:translate-y-[-2px]"}`}
               style={{ backgroundColor: colors.primary }}
             >
-              {loading
-                ? "Processing..."
-                : `Register as ${role.charAt(0).toUpperCase() + role.slice(1)}`}
+              {loading ? "Processing..." : `Register as ${role}`}
               {!loading && <HowToRegIcon fontSize="small" className="ml-1" />}
             </button>
           </form>
