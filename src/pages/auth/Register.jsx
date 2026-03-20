@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { colors } from "../../theme/color";
 import Logo from "../../component/Logo";
 import CandidateProfileComplete from "../../component/auth/CandidateProfileComplete";
+import InterviewerProfileComplete from "../../component/auth/InterviewerProfileComplete"; // 1. Interviewer Popup එක Import කරන්න
 
 // MUI Icons
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
@@ -18,26 +19,31 @@ import googleLogo from "../../assets/google.png";
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("candidate");
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [isCandidatePopupOpen, setIsCandidatePopupOpen] = useState(false); // Candidate සඳහා වෙනම State එකක්
+  const [isInterviewerPopupOpen, setIsInterviewerPopupOpen] = useState(false); // 2. Interviewer සඳහා වෙනම State එකක්
   const navigate = useNavigate();
 
   const handleRegisterSubmit = (e) => {
     e.preventDefault();
     if (role === "candidate") {
-      setIsPopupOpen(true);
+      setIsCandidatePopupOpen(true);
     } else {
-      navigate("/interviewer-dashboard");
+      setIsInterviewerPopupOpen(true); // 3. Interviewer තෝරාගෙන තිබේනම් Interviewer Popup එක පෙන්වන්න
     }
   };
 
-  const handleFinalComplete = (profileData) => {
-    console.log("Final Registration Data:", profileData);
+  const handleCandidateComplete = (profileData) => {
+    console.log("Candidate Profile Data:", profileData);
     navigate("/candidate-dashboard");
+  };
+
+  const handleInterviewerComplete = (profileData) => {
+    console.log("Interviewer Profile Data:", profileData);
+    navigate("/interviewer-dashboard"); // 4. Interviewer දත්ත පිරවූ පසු Interviewer Dashboard එකට යවන්න
   };
 
   return (
     <div className="min-h-screen w-full flex bg-[#FDFDFD] relative overflow-hidden">
-      {/* 1. Global Animations Style */}
       <style>{`
         @keyframes fadeSlideUp {
           from { opacity: 0; transform: translateY(20px); }
@@ -48,16 +54,23 @@ const Register = () => {
         }
       `}</style>
 
-      {/* Profile Completion Popup */}
+      {/* Candidate Popup */}
       <CandidateProfileComplete
-        isOpen={isPopupOpen}
-        onClose={() => setIsPopupOpen(false)} // Close function එක මෙතන තියෙනවා
-        onComplete={handleFinalComplete}
+        isOpen={isCandidatePopupOpen}
+        onClose={() => setIsCandidatePopupOpen(false)}
+        onComplete={handleCandidateComplete}
+      />
+
+      {/* 5. Interviewer Popup එක මෙතනට එකතු කළා */}
+      <InterviewerProfileComplete
+        isOpen={isInterviewerPopupOpen}
+        onClose={() => setIsInterviewerPopupOpen(false)}
+        onComplete={handleInterviewerComplete}
       />
 
       {/* Left Side: Branding & Description */}
       <div
-        className={`hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-16 relative overflow-hidden transition-all duration-700 ${isPopupOpen ? "blur-md" : ""}`}
+        className={`hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-16 relative overflow-hidden transition-all duration-700 ${isCandidatePopupOpen || isInterviewerPopupOpen ? "blur-md" : ""}`}
         style={{ backgroundColor: colors.gray.light }}
       >
         <div
@@ -94,7 +107,7 @@ const Register = () => {
 
       {/* Right Side: The Registration Form */}
       <div
-        className={`flex-1 flex items-center justify-center p-8 transition-all duration-500 ${isPopupOpen ? "blur-md pointer-events-none scale-95 opacity-50" : "scale-100 opacity-100"}`}
+        className={`flex-1 flex items-center justify-center p-8 transition-all duration-500 ${isCandidatePopupOpen || isInterviewerPopupOpen ? "blur-md pointer-events-none scale-95 opacity-50" : "scale-100 opacity-100"}`}
       >
         <div className="w-full max-w-[440px] animate-content">
           <div className="mb-8 text-center lg:text-left">
@@ -120,16 +133,24 @@ const Register = () => {
               className="flex-1 p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-2 group"
               style={{
                 borderColor: role === "candidate" ? colors.primary : "#E5E7EB",
-                backgroundColor: role === "candidate" ? `${colors.primary}08` : "transparent",
+                backgroundColor:
+                  role === "candidate" ? `${colors.primary}08` : "transparent",
               }}
             >
               <SchoolIcon
                 style={{
-                  color: role === "candidate" ? colors.primary : colors.gray.medium,
-                  transition: "0.3s"
+                  color:
+                    role === "candidate" ? colors.primary : colors.gray.medium,
+                  transition: "0.3s",
                 }}
               />
-              <span className="font-bold text-sm" style={{ color: role === "candidate" ? colors.black : colors.gray.medium }}>
+              <span
+                className="font-bold text-sm"
+                style={{
+                  color:
+                    role === "candidate" ? colors.black : colors.gray.medium,
+                }}
+              >
                 Candidate
               </span>
             </button>
@@ -139,17 +160,30 @@ const Register = () => {
               onClick={() => setRole("interviewer")}
               className="flex-1 p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center gap-2 group"
               style={{
-                borderColor: role === "interviewer" ? colors.primary : "#E5E7EB",
-                backgroundColor: role === "interviewer" ? `${colors.primary}08` : "transparent",
+                borderColor:
+                  role === "interviewer" ? colors.primary : "#E5E7EB",
+                backgroundColor:
+                  role === "interviewer"
+                    ? `${colors.primary}08`
+                    : "transparent",
               }}
             >
               <WorkOutlineIcon
                 style={{
-                  color: role === "interviewer" ? colors.primary : colors.gray.medium,
-                  transition: "0.3s"
+                  color:
+                    role === "interviewer"
+                      ? colors.primary
+                      : colors.gray.medium,
+                  transition: "0.3s",
                 }}
               />
-              <span className="font-bold text-sm" style={{ color: role === "interviewer" ? colors.black : colors.gray.medium }}>
+              <span
+                className="font-bold text-sm"
+                style={{
+                  color:
+                    role === "interviewer" ? colors.black : colors.gray.medium,
+                }}
+              >
                 Interviewer
               </span>
             </button>
@@ -158,7 +192,12 @@ const Register = () => {
           {/* Form */}
           <form className="space-y-4" onSubmit={handleRegisterSubmit}>
             <div>
-              <label className="text-sm font-bold ml-1 mb-1 block" style={{ color: colors.black }}>Username</label>
+              <label
+                className="text-sm font-bold ml-1 mb-1 block"
+                style={{ color: colors.black }}
+              >
+                Username
+              </label>
               <div className="relative group/input">
                 <PersonOutlineIcon
                   className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within/input:opacity-100 group-focus-within/input:text-orange-500 transition-all"
@@ -174,7 +213,12 @@ const Register = () => {
             </div>
 
             <div>
-              <label className="text-sm font-bold ml-1 mb-1 block" style={{ color: colors.black }}>Password</label>
+              <label
+                className="text-sm font-bold ml-1 mb-1 block"
+                style={{ color: colors.black }}
+              >
+                Password
+              </label>
               <div className="relative group/input">
                 <LockOutlinedIcon
                   className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within/input:opacity-100 group-focus-within/input:text-orange-500 transition-all"
@@ -191,13 +235,22 @@ const Register = () => {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30 hover:opacity-100 transition-opacity"
                 >
-                  {showPassword ? <VisibilityOffIcon sx={{ fontSize: 20 }} /> : <VisibilityIcon sx={{ fontSize: 20 }} />}
+                  {showPassword ? (
+                    <VisibilityOffIcon sx={{ fontSize: 20 }} />
+                  ) : (
+                    <VisibilityIcon sx={{ fontSize: 20 }} />
+                  )}
                 </button>
               </div>
             </div>
 
             <div>
-              <label className="text-sm font-bold ml-1 mb-1 block" style={{ color: colors.black }}>Confirm Password</label>
+              <label
+                className="text-sm font-bold ml-1 mb-1 block"
+                style={{ color: colors.black }}
+              >
+                Confirm Password
+              </label>
               <div className="relative group/input">
                 <LockOutlinedIcon
                   className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within/input:opacity-100 group-focus-within/input:text-orange-500 transition-all"
@@ -233,7 +286,10 @@ const Register = () => {
             <div className="h-[1px] w-full bg-gray-100"></div>
           </div>
 
-          <p className="mt-8 text-center text-sm font-medium" style={{ color: colors.gray.medium }}>
+          <p
+            className="mt-8 text-center text-sm font-medium"
+            style={{ color: colors.gray.medium }}
+          >
             Already have an account?
             <button
               onClick={() => navigate("/login")}
