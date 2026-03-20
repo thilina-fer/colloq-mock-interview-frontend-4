@@ -5,8 +5,12 @@ import Logo from "../../component/Logo";
 import CandidateProfileComplete from "../../component/auth/CandidateProfileComplete";
 import InterviewerProfileComplete from "../../component/auth/InterviewerProfileComplete";
 
+// API Service Import
+import { AuthService } from "../../services/AuthService";
+
 // MUI Icons
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
+import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
 import VisibilityIcon from "@mui/icons-material/Visibility";
@@ -14,17 +18,17 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import SchoolIcon from "@mui/icons-material/School";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 
-import googleLogo from "../../assets/google.png";
-
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("candidate");
   const [isCandidatePopupOpen, setIsCandidatePopupOpen] = useState(false);
   const [isInterviewerPopupOpen, setIsInterviewerPopupOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     username: "",
+    email: "",
     password: "",
     confirmPassword: "",
   });
@@ -35,6 +39,8 @@ const Register = () => {
       alert("Passwords do not match!");
       return;
     }
+
+    // Role එක අනුව අදාළ Profile Completion Popup එක විවෘත කරයි
     if (role === "candidate") {
       setIsCandidatePopupOpen(true);
     } else {
@@ -42,28 +48,72 @@ const Register = () => {
     }
   };
 
-  const handleCandidateComplete = (profileData) => {
-    const finalUserData = {
-      name: formData.username,
-      ...profileData,
-      role: "candidate",
-    };
-    localStorage.setItem("currentUser", JSON.stringify(finalUserData));
-    navigate("/dashboard/candidate");
+  // --- Candidate Registration & Profile Completion Flow ---
+  const handleCandidateComplete = async (profileData) => {
+    setLoading(true);
+    try {
+      // පියවර 1: User Account එක Register කිරීම (Returns String message)
+      console.log("Step 1: Registering User Account...");
+      await AuthService.register({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        role: "CANDIDATE",
+      });
+
+      // පියවර 2: JWT Token එක ලබා ගැනීමට Login වීම (Returns AuthResponseDTO)
+      console.log("Step 2: Logging in to get Token...");
+      const loginRes = await AuthService.login({
+        username: formData.username,
+        password: formData.password,
+      });
+
+      // Token එක Extract කිරීම (Object හෝ String ලෙස පරීක්ෂා කරයි)
+      const token =
+        loginRes?.accessToken ||
+        (typeof loginRes === "string" ? loginRes : loginRes?.data?.accessToken);
+
+      console.log("Token Sync Check:", token);
+
+      if (!token) {
+        throw new Error(
+          "Login successful but valid Token not received from backend!",
+        );
+      }
+
+      // පියවර 3: Candidate Profile එක සම්පූර්ණ කිරීම
+      console.log("Step 3: Completing Profile...");
+      const profileDTO = {
+        bio: profileData.bio,
+        githubUrl: profileData.github,
+        linkedinUrl: profileData.linkedin,
+        profilePicture: "https://example.com/default.jpg", // Default අගයක් ලෙස
+        status: "ACTIVE",
+      };
+
+      // 403 Forbidden වැළැක්වීමට කෙලින්ම Token එක Header එකට Inject කරයි
+      await AuthService.completeCandidateProfile(profileDTO, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      alert("Registration and Profile Setup Successful!");
+      navigate("/dashboard/candidate");
+    } catch (err) {
+      console.error("Full Error Details:", err);
+      const errorMsg =
+        err.response?.data?.message || err.message || "An error occurred.";
+      alert("Error: " + errorMsg);
+    } finally {
+      setLoading(false);
+      setIsCandidatePopupOpen(false);
+    }
   };
 
   const handleInterviewerComplete = (profileData) => {
-    // 1. එකතු කරගත් සියලු දත්ත එකම object එකකට ගැනීම
-    const finalUserData = {
-      name: formData.username,
-      ...profileData,
-      role: "interviewer", // Role එක මෙතනදී add වෙනවා
-    };
-    // 2. LocalStorage එකේ Save කිරීම
-    localStorage.setItem("currentUser", JSON.stringify(finalUserData));
-
-    // 3. Interviewer Dashboard එකට Navigate කිරීම
-    navigate("/dashboard/interviewer");
+    alert("Interviewer registration feature is coming soon!");
+    setIsInterviewerPopupOpen(false);
   };
 
   return (
@@ -73,6 +123,7 @@ const Register = () => {
         .animate-content { animation: fadeSlideUp 0.8s ease-out forwards; }
       `}</style>
 
+      {/* Popups */}
       <CandidateProfileComplete
         isOpen={isCandidatePopupOpen}
         onClose={() => setIsCandidatePopupOpen(false)}
@@ -86,11 +137,11 @@ const Register = () => {
 
       {/* Left Side: Branding */}
       <div
-        className={`hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-16 relative overflow-hidden transition-all duration-700 ${isCandidatePopupOpen || isInterviewerPopupOpen ? "blur-md" : ""}`}
+        className={`hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-16 relative transition-all duration-700 ${isCandidatePopupOpen || isInterviewerPopupOpen ? "blur-md" : ""}`}
         style={{ backgroundColor: colors.gray.light }}
       >
-        <div className="max-w-md z-10 text-center lg:text-left group animate-content">
-          <Logo className="mb-10 scale-125 origin-left transition-transform" />
+        <div className="max-w-md z-10 text-center lg:text-left animate-content">
+          <Logo className="mb-10 scale-125 origin-left" />
           <h1
             className="text-6xl font-extrabold tracking-tight mb-6"
             style={{ color: colors.black }}
@@ -99,11 +150,11 @@ const Register = () => {
             <span style={{ color: colors.primary }}>ColloQ.</span>
           </h1>
           <p
-            className="text-lg leading-relaxed opacity-80"
+            className="text-lg opacity-80"
             style={{ color: colors.textPrimary }}
           >
-            The journey to your dream career starts here. Create an account and
-            start practicing.
+            The journey to your dream career starts here. Practice with industry
+            experts.
           </p>
         </div>
       </div>
@@ -121,7 +172,7 @@ const Register = () => {
               Create Account
             </h2>
             <p style={{ color: colors.gray.medium }}>
-              Choose your role and fill in the details.
+              Choose your role and enter your details.
             </p>
           </div>
 
@@ -142,15 +193,7 @@ const Register = () => {
                     role === "candidate" ? colors.primary : colors.gray.medium,
                 }}
               />
-              <span
-                className="font-bold text-sm"
-                style={{
-                  color:
-                    role === "candidate" ? colors.black : colors.gray.medium,
-                }}
-              >
-                Candidate
-              </span>
+              <span className="font-bold text-sm">Candidate</span>
             </button>
             <button
               type="button"
@@ -173,112 +216,124 @@ const Register = () => {
                       : colors.gray.medium,
                 }}
               />
-              <span
-                className="font-bold text-sm"
-                style={{
-                  color:
-                    role === "interviewer" ? colors.black : colors.gray.medium,
-                }}
-              >
-                Interviewer
-              </span>
+              <span className="font-bold text-sm">Interviewer</span>
             </button>
           </div>
 
           <form className="space-y-4" onSubmit={handleRegisterSubmit}>
             <div>
-              <label
-                className="text-sm font-bold ml-1 mb-1 block"
-                style={{ color: colors.black }}
-              >
+              <label className="text-sm font-bold ml-1 mb-1 block">
                 Username
               </label>
-              <div className="relative group/input">
+              <div className="relative">
                 <PersonOutlineIcon
-                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within/input:opacity-100 group-focus-within/input:text-orange-500 transition-all"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
                   sx={{ fontSize: 20 }}
                 />
                 <input
                   required
                   type="text"
-                  placeholder="thilina_dev"
+                  placeholder="e.g. thilina_dev"
                   value={formData.username}
                   onChange={(e) =>
                     setFormData({ ...formData, username: e.target.value })
                   }
-                  className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                  className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                 />
               </div>
             </div>
+
             <div>
-              <label
-                className="text-sm font-bold ml-1 mb-1 block"
-                style={{ color: colors.black }}
-              >
-                Password
+              <label className="text-sm font-bold ml-1 mb-1 block">
+                Email Address
               </label>
-              <div className="relative group/input">
-                <LockOutlinedIcon
-                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within/input:opacity-100 transition-all"
+              <div className="relative">
+                <MailOutlineIcon
+                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
                   sx={{ fontSize: 20 }}
                 />
                 <input
                   required
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Create password"
-                  value={formData.password}
+                  type="email"
+                  placeholder="e.g. thilina@gmail.com"
+                  value={formData.email}
                   onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
+                    setFormData({ ...formData, email: e.target.value })
                   }
-                  className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 opacity-30"
-                >
-                  {showPassword ? (
-                    <VisibilityOffIcon sx={{ fontSize: 20 }} />
-                  ) : (
-                    <VisibilityIcon sx={{ fontSize: 20 }} />
-                  )}
-                </button>
-              </div>
-            </div>
-            <div>
-              <label
-                className="text-sm font-bold ml-1 mb-1 block"
-                style={{ color: colors.black }}
-              >
-                Confirm Password
-              </label>
-              <div className="relative group/input">
-                <LockOutlinedIcon
-                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within/input:opacity-100 transition-all"
-                  sx={{ fontSize: 20 }}
-                />
-                <input
-                  required
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Re-enter password"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  className="w-full pl-12 pr-12 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                  className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
                 />
               </div>
             </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-bold ml-1 mb-1 block">
+                  Password
+                </label>
+                <div className="relative">
+                  <LockOutlinedIcon
+                    className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
+                    sx={{ fontSize: 20 }}
+                  />
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    placeholder="******"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="w-full pl-12 pr-10 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 opacity-30"
+                  >
+                    {showPassword ? (
+                      <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                    ) : (
+                      <VisibilityIcon sx={{ fontSize: 18 }} />
+                    )}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-bold ml-1 mb-1 block">
+                  Confirm
+                </label>
+                <div className="relative">
+                  <LockOutlinedIcon
+                    className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
+                    sx={{ fontSize: 20 }}
+                  />
+                  <input
+                    required
+                    type={showPassword ? "text" : "password"}
+                    placeholder="******"
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                    className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                  />
+                </div>
+              </div>
+            </div>
+
             <button
               type="submit"
-              className="w-full py-4 mt-2 rounded-xl font-bold text-white shadow-lg transition-all hover:translate-y-[-2px]"
+              disabled={loading}
+              className={`w-full py-4 mt-2 rounded-xl font-bold text-white shadow-lg transition-all ${loading ? "opacity-70 cursor-not-allowed" : "hover:translate-y-[-2px]"}`}
               style={{ backgroundColor: colors.primary }}
             >
-              Sign Up as {role.charAt(0).toUpperCase() + role.slice(1)}{" "}
-              <HowToRegIcon fontSize="small" className="ml-1" />
+              {loading
+                ? "Processing..."
+                : `Register as ${role.charAt(0).toUpperCase() + role.slice(1)}`}
+              {!loading && <HowToRegIcon fontSize="small" className="ml-1" />}
             </button>
           </form>
 
