@@ -63,7 +63,6 @@ const Register = () => {
       password: formData.password,
     });
 
-    // ඔබ සොයාගත් පරිදි 'accessToken' හරහා Token එක ලබා ගනී
     const token =
       loginRes?.accessToken ||
       (typeof loginRes === "string" ? loginRes : loginRes?.data?.accessToken);
@@ -123,7 +122,6 @@ const Register = () => {
         profilePicture: "https://example.com/default-interviewer.jpg",
       };
 
-      // Interviewer profile එක සඳහා වෙනම AuthService method එකක් භාවිතා කළ හැක
       await AuthService.completeInterviewerProfile(profileDTO, {
         headers: { Authorization: `Bearer ${token}` },
       });

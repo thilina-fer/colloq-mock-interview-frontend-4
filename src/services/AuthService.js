@@ -1,7 +1,6 @@
 import api from "../api/axios";
 
 export const AuthService = {
-  // Step 1: Register (Returns String)
   register: async (userData) => {
     try {
       const response = await api.post("/auth/register", userData);
@@ -11,13 +10,11 @@ export const AuthService = {
     }
   },
 
-  // Step 2: Login (Returns AuthResponseDTO)
   login: async (credentials) => {
     try {
       const response = await api.post("/auth/login", credentials);
       const data = response.data;
 
-      // Token එක හඳුනාගැනීම (Object එකක් හෝ String එකක් ලෙස)
       let token = "";
       if (typeof data === "string") {
         token = data;
@@ -51,7 +48,6 @@ export const AuthService = {
     }
   },
 
-  // AuthService.js ඇතුළත එක් කරන්න
 completeInterviewerProfile: async (profileDTO, config = {}) => {
     try {
         const { data } = await api.post("/interviewer/complete-interviewer-profile", profileDTO, config);
