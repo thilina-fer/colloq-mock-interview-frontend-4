@@ -50,4 +50,15 @@ export const AuthService = {
       throw error;
     }
   },
+
+  // AuthService.js ඇතුළත එක් කරන්න
+completeInterviewerProfile: async (profileDTO, config = {}) => {
+    try {
+        const { data } = await api.post("/interviewer/complete-interviewer-profile", profileDTO, config);
+        return data;
+    } catch (error) {
+        throw error;
+    }
+}
+
 };
