@@ -1,45 +1,36 @@
-// src/components/Logo.jsx
 import React from "react";
-import { colors } from "../theme/color";
+// Kalin api hadapu colors file eka import karaganna (Path eka hariyata balanna)
+import { colors } from "../theme/colors";
 
 const Logo = ({ className = "" }) => {
   return (
     <div
       className={`flex items-center cursor-pointer select-none ${className}`}
-      style={{ 
+      style={{
         fontFamily: "'Luckiest Guy', cursive",
-        fontSize: '2.5rem', // Bold fonts walata poddak loku size ekak hodayi
-        letterSpacing: '0.05em'
+        fontSize: "2.5rem",
+        letterSpacing: "0.05em",
       }}
     >
       <div className="flex group transition-all duration-300 transform hover:scale-105">
-        {/* Collo Part */}
-        <span 
-          style={{ 
-            color: colors.black,
-            textShadow: `2px 2px 0px ${colors.gray[100]}` 
-          }} 
+        {/* Collo Part - Dark theme nisa meka Sudu pata (textMain) wenna oni */}
+        <span
+          style={{ color: colors.textMain }}
           className="group-hover:-rotate-2 transition-transform"
         >
           Collo
         </span>
 
-        {/* Q Part */}
-        <span 
-          style={{ 
-            color: colors.primary,
-            textShadow: `2px 2px 0px ${colors.black}`
-          }} 
-          className="group-hover:rotate-6 transition-transform inline-block"
+        {/* Q Part - Orange pata (Primary) */}
+        <span
+          style={{ color: colors.primary }}
+          className="group-hover:rotate-6 transition-transform inline-block drop-shadow-md"
         >
           Q
         </span>
 
-        {/* Animated Dot */}
-        <span 
-          style={{ color: colors.primary }} 
-          className="animate-bounce ml-1"
-        >
+        {/* Animated Dot - Orange pata (Primary) */}
+        <span style={{ color: colors.primary }} className="animate-bounce ml-1">
           .
         </span>
       </div>
