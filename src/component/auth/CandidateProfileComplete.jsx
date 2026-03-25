@@ -1,13 +1,16 @@
 import React, { useState } from "react";
-import { colors } from "../../theme/color";
-// MUI Icons
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import RocketLaunchIcon from "@mui/icons-material/RocketLaunch";
 import CloseIcon from "@mui/icons-material/Close";
 
-const CandidateProfileComplete = ({ isOpen, onClose, onComplete }) => {
+const CandidateProfileComplete = ({
+  isOpen,
+  onClose,
+  onComplete,
+  isSubmitting,
+}) => {
   const [formData, setFormData] = useState({
     bio: "",
     github: "",
@@ -25,63 +28,57 @@ const CandidateProfileComplete = ({ isOpen, onClose, onComplete }) => {
     }
   };
 
-  // මෝඩල් එකෙන් පිටත (Overlay) ක්ලික් කළොත් වැහෙන ෆන්ක්ෂන් එක
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
-      onClose();
-    }
+    if (e.target === e.currentTarget && !isSubmitting) onClose();
   };
 
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-md bg-black/40 cursor-pointer"
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80 cursor-pointer"
       onClick={handleOverlayClick}
     >
       <div
-        className="w-full max-w-lg bg-white rounded-3xl p-8 shadow-2xl animate-popIn relative cursor-default"
-        style={{ border: `1px solid ${colors.gray.light}` }}
-        onClick={(e) => e.stopPropagation()} // කාඩ් එක ඇතුළේ ක්ලික් කළාම වැහෙන එක නවත්වනවා
+        className="w-full max-w-lg bg-[#111111] border border-[#333] rounded-sm p-8 shadow-2xl relative cursor-default"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-5 right-5 p-1.5 rounded-full hover:bg-gray-100 transition-all opacity-50 hover:opacity-100 active:scale-90"
-          style={{ color: colors.black }}
-        >
-          <CloseIcon sx={{ fontSize: 20 }} />
-        </button>
+        <div className="absolute top-0 left-0 w-full h-1 bg-orange-600"></div>
 
-        {/* Header Section */}
-        <div className="text-center mb-8 animate-textUp">
-          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center mx-auto mb-4 rotate-3 transition-transform hover:rotate-0 duration-300">
-            <RocketLaunchIcon style={{ color: colors.primary, fontSize: 32 }} />
-          </div>
-          <h2 className="text-2xl font-black" style={{ color: colors.black }}>
-            One Last <span style={{ color: colors.primary }}>Step!</span>
-          </h2>
-          <p
-            className="text-sm font-medium mt-1"
-            style={{ color: colors.gray.medium }}
+        {!isSubmitting && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-1.5 text-gray-500 hover:text-white transition-colors"
           >
+            <CloseIcon sx={{ fontSize: 20 }} />
+          </button>
+        )}
+
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 bg-[#1a1a1a] border border-[#333] rounded-sm flex items-center justify-center mx-auto mb-4">
+            <RocketLaunchIcon
+              className="text-orange-500"
+              sx={{ fontSize: 28 }}
+            />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-100 uppercase tracking-wide">
+            One Last <span className="text-orange-500">Step</span>
+          </h2>
+          <p className="text-[13px] font-medium mt-1 text-gray-500">
             Complete your profile to unlock your dashboard.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Bio Input */}
-          <div className="animate-textUp delay-100">
-            <label
-              className="text-xs font-black uppercase tracking-widest ml-1 mb-2 block"
-              style={{ color: colors.black }}
-            >
+          <div>
+            <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2 block">
               Your Bio
             </label>
             <div className="relative group">
-              <EditNoteIcon className="absolute left-4 top-4 opacity-30 group-focus-within:opacity-100 transition-opacity" />
+              <EditNoteIcon className="absolute left-3 top-3.5 text-gray-600 group-focus-within:text-orange-500 transition-colors" />
               <textarea
                 required
+                disabled={isSubmitting}
                 placeholder="Ex: Full-stack developer passionate about React..."
-                className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 min-h-[100px] resize-none font-medium text-sm"
+                className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 min-h-[100px] resize-none text-sm disabled:opacity-50"
                 onChange={(e) =>
                   setFormData({ ...formData, bio: e.target.value })
                 }
@@ -89,50 +86,43 @@ const CandidateProfileComplete = ({ isOpen, onClose, onComplete }) => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-textUp delay-200">
-            {/* GitHub URL */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label
-                className="text-xs font-black uppercase tracking-widest ml-1 mb-2 block"
-                style={{ color: colors.black }}
-              >
+              <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2 block">
                 GitHub URL
               </label>
               <div className="relative group">
                 <GitHubIcon
-                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-orange-500"
                   sx={{ fontSize: 18 }}
                 />
                 <input
                   required
                   type="url"
+                  disabled={isSubmitting}
                   placeholder="github.com/..."
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 font-medium text-sm"
+                  className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm disabled:opacity-50"
                   onChange={(e) =>
                     setFormData({ ...formData, github: e.target.value })
                   }
                 />
               </div>
             </div>
-
-            {/* LinkedIn URL */}
             <div>
-              <label
-                className="text-xs font-black uppercase tracking-widest ml-1 mb-2 block"
-                style={{ color: colors.black }}
-              >
+              <label className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-2 block">
                 LinkedIn URL
               </label>
               <div className="relative group">
                 <LinkedInIcon
-                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30 group-focus-within:opacity-100"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-orange-500"
                   sx={{ fontSize: 18 }}
                 />
                 <input
                   required
                   type="url"
+                  disabled={isSubmitting}
                   placeholder="linkedin.com/in/..."
-                  className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 outline-none transition-all focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 font-medium text-sm"
+                  className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 text-sm disabled:opacity-50"
                   onChange={(e) =>
                     setFormData({ ...formData, linkedin: e.target.value })
                   }
@@ -141,32 +131,40 @@ const CandidateProfileComplete = ({ isOpen, onClose, onComplete }) => {
             </div>
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-4 mt-2 rounded-xl font-black text-white shadow-lg transition-all hover:translate-y-[-2px] active:scale-[0.98] animate-textUp delay-300"
-            style={{ backgroundColor: colors.primary }}
+            disabled={isSubmitting}
+            className="w-full py-3.5 mt-2 rounded-sm font-bold text-white bg-orange-600 hover:bg-orange-500 transition-all active:scale-[0.98] uppercase tracking-wider text-sm flex justify-center items-center disabled:opacity-70"
           >
-            Launch Dashboard
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                PROCESSING...
+              </span>
+            ) : (
+              "LAUNCH DASHBOARD"
+            )}
           </button>
         </form>
       </div>
-
-      <style>{`
-        @keyframes popIn {
-          0% { opacity: 0; transform: scale(0.95); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes textUp {
-          0% { opacity: 0; transform: translateY(10px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .animate-popIn { animation: popIn 0.4s ease-out forwards; }
-        .animate-textUp { animation: textUp 0.6s ease-out forwards; }
-        .delay-100 { animation-delay: 0.1s; opacity: 0; }
-        .delay-200 { animation-delay: 0.2s; opacity: 0; }
-        .delay-300 { animation-delay: 0.3s; opacity: 0; }
-      `}</style>
     </div>
   );
 };

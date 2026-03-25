@@ -1,30 +1,28 @@
+// src/pages/Register.jsx
 import React, { useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { colors } from "../../theme/color";
 import Logo from "../../component/Logo";
-import CandidateProfileComplete from "../../component/auth/CandidateProfileComplete";
-import InterviewerProfileComplete from "../../component/auth/InterviewerProfileComplete";
-
-// API Service Import
-import { AuthService } from "../../services/AuthService";
-
-// MUI Icons
+import SchoolIcon from "@mui/icons-material/School";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
-import HowToRegIcon from "@mui/icons-material/HowToReg";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import SchoolIcon from "@mui/icons-material/School";
-import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+
+import CandidateProfileComplete from "../../component/auth/CandidateProfileComplete";
+import InterviewerProfileComplete from "../../component/auth/InterviewerProfileComplete";
 
 const Register = () => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("candidate");
-  const [isCandidatePopupOpen, setIsCandidatePopupOpen] = useState(false);
-  const [isInterviewerPopupOpen, setIsInterviewerPopupOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const [role, setRole] = useState("candidate");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // API Calls yaddi UI eka loading pennanna state ekak
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -33,345 +31,357 @@ const Register = () => {
     confirmPassword: "",
   });
 
-  const handleRegisterSubmit = (e) => {
+  const [isCandidateModalOpen, setIsCandidateModalOpen] = useState(false);
+  const [isInterviewerModalOpen, setIsInterviewerModalOpen] = useState(false);
+
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleInitialRegister = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-
     if (role === "candidate") {
-      setIsCandidatePopupOpen(true);
+      setIsCandidateModalOpen(true);
     } else {
-      setIsInterviewerPopupOpen(true);
+      setIsInterviewerModalOpen(true);
     }
   };
 
-  // --- Common Registration & Login Logic ---
-  const registerAndGetToken = async (targetRole) => {
-    console.log(`Step 1: Registering User as ${targetRole}...`);
-    await AuthService.register({
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      role: targetRole,
-    });
-
-    console.log("Step 2: Logging in to get Token...");
-    const loginRes = await AuthService.login({
-      username: formData.username,
-      password: formData.password,
-    });
-
-    const token =
-      loginRes?.accessToken ||
-      (typeof loginRes === "string" ? loginRes : loginRes?.data?.accessToken);
-
-    if (!token) {
-      throw new Error("Login successful but valid accessToken not received!");
-    }
-
-    return token;
-  };
-
-  // --- Candidate Flow ---
-  const handleCandidateComplete = async (profileData) => {
-    setLoading(true);
+  // CANDIDATE REGISTRATION FLOW
+  const handleCandidateComplete = async (candidateExtraData) => {
+    setIsSubmitting(true);
     try {
-      const token = await registerAndGetToken("CANDIDATE");
+      // Step 1: Register User
+      await axios.post("http://localhost:8080/api/v1/auth/register", {
+        username: formData.username,
+        password: formData.password,
+        email: formData.email,
+        role: "CANDIDATE",
+      });
 
-      console.log("Step 3: Completing Candidate Profile...");
-      const profileDTO = {
-        bio: profileData.bio,
-        githubUrl: profileData.github,
-        linkedinUrl: profileData.linkedin,
-        profilePicture: "https://example.com/default-candidate.jpg",
+      // Step 2: Auto Login to get Token
+      const loginRes = await axios.post(
+        "http://localhost:8080/api/v1/auth/login",
+        {
+          username: formData.username,
+          password: formData.password,
+        },
+      );
+      const token = loginRes.data.token;
+      localStorage.setItem("authToken", token);
+
+      // Step 3: Complete Profile
+      // TODO: Backend eke me endpoint eka haduwama meka uncomment karanna
+      const profilePayload = {
+        bio: candidateExtraData.bio,
+        githubUrl: candidateExtraData.github,
+        linkedinUrl: candidateExtraData.linkedin,
+        profilePicture: "",
         status: "ACTIVE",
       };
 
-      await AuthService.completeCandidateProfile(profileDTO, {
-        headers: { Authorization: `Bearer ${token}` },
+      /* await axios.post("http://localhost:8080/api/v1/candidate/profile", profilePayload, {
+        headers: { Authorization: `Bearer ${token}` }
       });
+      */
 
-      alert("Candidate Registration Successful!");
+      setIsCandidateModalOpen(false);
       navigate("/dashboard/candidate");
-    } catch (err) {
-      console.error("Candidate Reg Error:", err);
-      alert("Error: " + (err.response?.data?.message || err.message));
+    } catch (error) {
+      console.error("Registration Error:", error);
+      alert("Failed to register. Please check console for details.");
     } finally {
-      setLoading(false);
-      setIsCandidatePopupOpen(false);
+      setIsSubmitting(false);
     }
   };
 
-  // --- Interviewer Flow ---
-  const handleInterviewerComplete = async (profileData) => {
-    setLoading(true);
+  // INTERVIEWER REGISTRATION FLOW
+  const handleInterviewerComplete = async (interviewerExtraData) => {
+    setIsSubmitting(true);
     try {
-      const token = await registerAndGetToken("INTERVIEWER");
-
-      console.log("Step 3: Completing Interviewer Profile...");
-      const profileDTO = {
-        bio: profileData.bio,
-        company: profileData.company,
-        designation: profileData.designation,
-        experienceYears: parseInt(profileData.experienceYears),
-        specialization: profileData.specialization,
-        githubUrl: profileData.github,
-        linkedinUrl: profileData.linkedin,
-        profilePicture: "https://example.com/default-interviewer.jpg",
-      };
-
-      await AuthService.completeInterviewerProfile(profileDTO, {
-        headers: { Authorization: `Bearer ${token}` },
+      // Step 1: Register User
+      await axios.post("http://localhost:8080/api/v1/auth/register", {
+        username: formData.username,
+        password: formData.password,
+        email: formData.email,
+        role: "INTERVIEWER",
       });
 
-      alert("Interviewer Registration Successful!");
-      navigate("/dashboard/interviewer");
-    } catch (err) {
-      console.error("Interviewer Reg Error:", err);
-      alert("Error: " + (err.response?.data?.message || err.message));
+      // Step 2: Auto Login to get Token
+      const loginRes = await axios.post(
+        "http://localhost:8080/api/v1/auth/login",
+        {
+          username: formData.username,
+          password: formData.password,
+        },
+      );
+      const token = loginRes.data.token;
+      localStorage.setItem("authToken", token);
+
+      // Step 3: Complete Profile
+      // TODO: Backend eke me endpoint eka haduwama meka uncomment karanna
+      const profilePayload = {
+        bio: interviewerExtraData.bio,
+        company: interviewerExtraData.company,
+        designation: interviewerExtraData.designation,
+        experienceYears: parseInt(interviewerExtraData.experience),
+        specialization: interviewerExtraData.specializations.join(", "),
+        githubUrl: interviewerExtraData.github,
+        linkedinUrl: interviewerExtraData.linkedin,
+        profilePicture: "",
+        status: "PENDING",
+      };
+
+      /*
+      await axios.post("http://localhost:8080/api/v1/interviewer/profile", profilePayload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      */
+
+      setIsInterviewerModalOpen(false);
+      navigate("/dashboard/interviewer"); // Interviewer dashboard eka thiyenawanam
+    } catch (error) {
+      console.error("Registration Error:", error);
+      alert("Failed to register. Please check console for details.");
     } finally {
-      setLoading(false);
-      setIsInterviewerPopupOpen(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-[#FDFDFD] relative overflow-hidden">
-      <style>{`
-        @keyframes fadeSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-content { animation: fadeSlideUp 0.8s ease-out forwards; }
-      `}</style>
-
-      {/* Popups */}
-      <CandidateProfileComplete
-        isOpen={isCandidatePopupOpen}
-        onClose={() => setIsCandidatePopupOpen(false)}
-        onComplete={handleCandidateComplete}
-      />
-      <InterviewerProfileComplete
-        isOpen={isInterviewerPopupOpen}
-        onClose={() => setIsInterviewerPopupOpen(false)}
-        onComplete={handleInterviewerComplete}
-      />
-
-      {/* Left Side: Branding */}
-      <div
-        className={`hidden lg:flex lg:w-1/2 flex-col justify-center items-center p-16 relative transition-all duration-700 ${isCandidatePopupOpen || isInterviewerPopupOpen ? "blur-md" : ""}`}
-        style={{ backgroundColor: colors.gray.light }}
-      >
-        <div className="max-w-md z-10 text-center lg:text-left animate-content">
-          <Logo className="mb-10 scale-125 origin-left" />
-          <h1
-            className="text-6xl font-extrabold tracking-tight mb-6"
-            style={{ color: colors.black }}
-          >
+    <div className="min-h-screen flex w-full font-sans bg-[#0a0a0a]">
+      {/* Left Side - Branding */}
+      <div className="hidden lg:flex flex-col justify-center px-20 w-1/2 bg-[#0a0a0a]">
+        <div className="max-w-md">
+          <div className="mb-12">
+            <Logo />
+          </div>
+          <h1 className="text-6xl font-black mb-4 leading-tight text-gray-100">
             Join <br />
-            <span style={{ color: colors.primary }}>ColloQ.</span>
+            <span className="text-orange-600">ColloQ.</span>
           </h1>
-          <p
-            className="text-lg opacity-80"
-            style={{ color: colors.textPrimary }}
-          >
+          <p className="text-lg font-medium leading-relaxed text-gray-500">
             The journey to your dream career starts here. Practice with industry
             experts.
           </p>
         </div>
       </div>
 
-      {/* Right Side: Form */}
-      <div
-        className={`flex-1 flex items-center justify-center p-8 transition-all duration-500 ${isCandidatePopupOpen || isInterviewerPopupOpen ? "blur-md pointer-events-none scale-95 opacity-50" : ""}`}
-      >
-        <div className="w-full max-w-[440px] animate-content">
-          <div className="mb-8 text-center lg:text-left">
-            <h2
-              className="text-3xl font-bold mb-2"
-              style={{ color: colors.black }}
-            >
-              Create Account
-            </h2>
-            <p style={{ color: colors.gray.medium }}>
-              Choose your role and enter your details.
-            </p>
-          </div>
+      {/* Right Side - Form */}
+      <div className="flex flex-col justify-center items-center w-full lg:w-1/2 p-8 bg-[#111111] border-l border-[#2a2a2a]">
+        <div className="w-full max-w-[440px]">
+          <h2 className="text-3xl font-bold mb-2 text-gray-100">
+            Create Account
+          </h2>
+          <p className="mb-8 font-medium text-gray-500 text-sm">
+            Choose your role and enter your details.
+          </p>
 
-          {/* Role Tabs */}
-          <div className="flex gap-4 mb-8">
-            <button
-              type="button"
-              onClick={() => setRole("candidate")}
-              className="flex-1 p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2"
-              style={{
-                borderColor: role === "candidate" ? colors.primary : "#E5E7EB",
-                backgroundColor:
-                  role === "candidate" ? `${colors.primary}08` : "transparent",
-              }}
-            >
-              <SchoolIcon
-                style={{
-                  color:
-                    role === "candidate" ? colors.primary : colors.gray.medium,
-                }}
-              />
-              <span className="font-bold text-sm">Candidate</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole("interviewer")}
-              className="flex-1 p-4 rounded-xl border-2 transition-all flex flex-col items-center gap-2"
-              style={{
-                borderColor:
-                  role === "interviewer" ? colors.primary : "#E5E7EB",
-                backgroundColor:
+          <form onSubmit={handleInitialRegister} className="space-y-5">
+            {/* Role Selection */}
+            <div className="flex gap-4 mb-6">
+              <div
+                onClick={() => setRole("candidate")}
+                className={`flex-1 flex flex-col items-center justify-center p-4 rounded-sm cursor-pointer transition-all duration-200 border ${
+                  role === "candidate"
+                    ? "border-orange-600 bg-[#1a1a1a]"
+                    : "border-[#333] bg-[#0a0a0a] hover:border-[#444]"
+                }`}
+              >
+                <SchoolIcon
+                  sx={{
+                    color: role === "candidate" ? "#ea580c" : "#666",
+                    fontSize: 28,
+                    mb: 1,
+                  }}
+                />
+                <span
+                  className={`font-bold text-[13px] uppercase tracking-wider ${role === "candidate" ? "text-gray-100" : "text-gray-500"}`}
+                >
+                  Candidate
+                </span>
+              </div>
+
+              <div
+                onClick={() => setRole("interviewer")}
+                className={`flex-1 flex flex-col items-center justify-center p-4 rounded-sm cursor-pointer transition-all duration-200 border ${
                   role === "interviewer"
-                    ? `${colors.primary}08`
-                    : "transparent",
-              }}
-            >
-              <WorkOutlineIcon
-                style={{
-                  color:
-                    role === "interviewer"
-                      ? colors.primary
-                      : colors.gray.medium,
-                }}
-              />
-              <span className="font-bold text-sm">Interviewer</span>
-            </button>
-          </div>
+                    ? "border-orange-600 bg-[#1a1a1a]"
+                    : "border-[#333] bg-[#0a0a0a] hover:border-[#444]"
+                }`}
+              >
+                <WorkOutlineIcon
+                  sx={{
+                    color: role === "interviewer" ? "#ea580c" : "#666",
+                    fontSize: 28,
+                    mb: 1,
+                  }}
+                />
+                <span
+                  className={`font-bold text-[13px] uppercase tracking-wider ${role === "interviewer" ? "text-gray-100" : "text-gray-500"}`}
+                >
+                  Interviewer
+                </span>
+              </div>
+            </div>
 
-          <form className="space-y-4" onSubmit={handleRegisterSubmit}>
+            {/* Username Input */}
             <div>
-              <label className="text-sm font-bold ml-1 mb-1 block">
+              <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
                 Username
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <PersonOutlineIcon
-                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
+                  className="absolute left-4 text-gray-500"
                   sx={{ fontSize: 20 }}
                 />
                 <input
-                  required
                   type="text"
-                  placeholder="e.g. thilina_dev"
+                  name="username"
+                  required
                   value={formData.username}
-                  onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
-                  }
-                  className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                  onChange={handleChange}
+                  placeholder="e.g. thilina_dev"
+                  className="w-full pl-12 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
                 />
               </div>
             </div>
 
+            {/* Email Input */}
             <div>
-              <label className="text-sm font-bold ml-1 mb-1 block">
+              <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
                 Email Address
               </label>
-              <div className="relative">
+              <div className="relative flex items-center">
                 <MailOutlineIcon
-                  className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
+                  className="absolute left-4 text-gray-500"
                   sx={{ fontSize: 20 }}
                 />
                 <input
-                  required
                   type="email"
-                  placeholder="e.g. thilina@gmail.com"
+                  name="email"
+                  required
                   value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                  onChange={handleChange}
+                  placeholder="e.g. thilina@gmail.com"
+                  className="w-full pl-12 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
                 />
               </div>
             </div>
 
+            {/* Password Grid */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-bold ml-1 mb-1 block">
+                <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
                   Password
                 </label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <LockOutlinedIcon
-                    className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
-                    sx={{ fontSize: 20 }}
+                    className="absolute left-3 text-gray-500"
+                    sx={{ fontSize: 18 }}
                   />
                   <input
-                    required
                     type={showPassword ? "text" : "password"}
-                    placeholder="******"
+                    name="password"
+                    required
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="w-full pl-12 pr-10 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                    onChange={handleChange}
+                    placeholder="••••••"
+                    className="w-full pl-10 pr-10 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
                   />
-                  <button
-                    type="button"
+                  <div
+                    className="absolute right-3 cursor-pointer text-gray-500 hover:text-gray-300"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 opacity-30"
                   >
                     {showPassword ? (
                       <VisibilityOffIcon sx={{ fontSize: 18 }} />
                     ) : (
                       <VisibilityIcon sx={{ fontSize: 18 }} />
                     )}
-                  </button>
+                  </div>
                 </div>
               </div>
+
               <div>
-                <label className="text-sm font-bold ml-1 mb-1 block">
+                <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
                   Confirm
                 </label>
-                <div className="relative">
+                <div className="relative flex items-center">
                   <LockOutlinedIcon
-                    className="absolute left-4 top-1/2 -translate-y-1/2 opacity-30"
-                    sx={{ fontSize: 20 }}
+                    className="absolute left-3 text-gray-500"
+                    sx={{ fontSize: 18 }}
                   />
                   <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirmPassword"
                     required
-                    type={showPassword ? "text" : "password"}
-                    placeholder="******"
                     value={formData.confirmPassword}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                    className="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10"
+                    onChange={handleChange}
+                    placeholder="••••••"
+                    className="w-full pl-10 pr-10 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
                   />
+                  <div
+                    className="absolute right-3 cursor-pointer text-gray-500 hover:text-gray-300"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <VisibilityOffIcon sx={{ fontSize: 18 }} />
+                    ) : (
+                      <VisibilityIcon sx={{ fontSize: 18 }} />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className={`w-full py-4 mt-2 rounded-xl font-bold text-white shadow-lg transition-all ${loading ? "opacity-70 cursor-not-allowed" : "hover:translate-y-[-2px]"}`}
-              style={{ backgroundColor: colors.primary }}
+              className="w-full py-3.5 mt-4 rounded-sm font-bold text-white bg-orange-600 hover:bg-orange-500 transition-all active:scale-[0.98] flex justify-center items-center gap-2 uppercase tracking-wider text-sm"
             >
-              {loading ? "Processing..." : `Register as ${role}`}
-              {!loading && <HowToRegIcon fontSize="small" className="ml-1" />}
+              CONTINUE AS {role}
+              {role === "candidate" ? (
+                <SchoolIcon sx={{ fontSize: 18 }} />
+              ) : (
+                <WorkOutlineIcon sx={{ fontSize: 18 }} />
+              )}
             </button>
           </form>
 
-          <div
-            className="mt-8 text-center text-sm font-medium"
-            style={{ color: colors.gray.medium }}
-          >
+          <div className="mt-8 text-center text-[13px] font-medium text-gray-500">
             Already have an account?{" "}
-            <button
-              onClick={() => navigate("/login")}
-              className="ml-2 font-bold"
-              style={{ color: colors.primary }}
+            <a
+              href="/login"
+              className="font-bold text-orange-500 hover:text-orange-400 hover:underline uppercase tracking-wide"
             >
-              Log in
-            </button>
+              LOG IN
+            </a>
           </div>
         </div>
       </div>
+
+      {/* ================= MODALS ================= */}
+      {/* Me modals dekata isSubmitting prop eka yawanawa loading pennanna */}
+
+      <CandidateProfileComplete
+        isOpen={isCandidateModalOpen}
+        onClose={() => setIsCandidateModalOpen(false)}
+        onComplete={handleCandidateComplete}
+        isSubmitting={isSubmitting}
+      />
+
+      <InterviewerProfileComplete
+        isOpen={isInterviewerModalOpen}
+        onClose={() => setIsInterviewerModalOpen(false)}
+        onComplete={handleInterviewerComplete}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 };
