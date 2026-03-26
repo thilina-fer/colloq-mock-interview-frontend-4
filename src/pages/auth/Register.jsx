@@ -1,7 +1,9 @@
 // src/pages/Register.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios"; // Interviewer fallback call ekata witarak danata use karanawa
+import { useGoogleLogin } from "@react-oauth/google"; // Custom button එකක් නිසා මේක පාවිච්චි කරමු
+import { jwtDecode } from "jwt-decode";
+import googleLogo from "../../assets/google.png"; // Google logo asset එක
 
 // Icons & Components
 import Logo from "../../component/Logo";
@@ -19,6 +21,8 @@ import InterviewerProfileComplete from "../../component/auth/InterviewerProfileC
 // Services
 import { AuthService } from "../../services/AuthService";
 import { CandidateService } from "../../services/CandidateService";
+import { InterviewerService } from "../../services/InterviewerService";
+import toast from "react-hot-toast";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -26,8 +30,6 @@ const Register = () => {
   const [role, setRole] = useState("candidate");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  // API Calls yaddi UI eka loading pennanna state ekak
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -41,144 +43,90 @@ const Register = () => {
   const [isInterviewerModalOpen, setIsInterviewerModalOpen] = useState(false);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleInitialRegister = (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      toast.error("Passwords do not match!");
       return;
     }
-    if (role === "candidate") {
-      setIsCandidateModalOpen(true);
-    } else {
-      setIsInterviewerModalOpen(true);
-    }
+    if (role === "candidate") setIsCandidateModalOpen(true);
+    else setIsInterviewerModalOpen(true);
   };
 
-  // ================= CANDIDATE REGISTRATION FLOW =================
-  // Modal eken ena imageFile ekath dan argument ekak widihata gannawa
+  // ================= GOOGLE AUTH LOGIC =================
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        // ඇත්තම implementation එකේදී මෙතනින් එන access token එක backend එකට යවලා
+        // user details ලබා ගැනීම වඩාත් සුදුසුයි.
+        toast.success(
+          "Google Authentication Successful! Please complete profile.",
+        );
+        if (role === "candidate") setIsCandidateModalOpen(true);
+        else setIsInterviewerModalOpen(true);
+      } catch (error) {
+        toast.error("Google Login Error");
+      }
+    },
+    onError: () => toast.error("Google Login Failed"),
+  });
+
+  // ================= REGISTRATION FLOWS (CANDIDATE & INTERVIEWER) =================
   const handleCandidateComplete = async (candidateExtraData, imageFile) => {
     setIsSubmitting(true);
     try {
-      // Step 1: Register User
-      await AuthService.register({
-        username: formData.username,
-        password: formData.password,
-        email: formData.email,
-        role: "CANDIDATE",
-      });
-
-      // Step 2: Auto Login to get Token
-      const loginRes = await AuthService.login({
+      await AuthService.register({ ...formData, role: "CANDIDATE" });
+      await AuthService.login({
         username: formData.username,
         password: formData.password,
       });
-
-      // Token eka local storage ekata save unada kiyala sure karanna podi delay ekak
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      console.log(
-        "Token for Profile Update:",
-        localStorage.getItem("authToken"),
-      );
-
-      // Step 3: Complete Profile payload
-      const profilePayload = {
+      await new Promise((r) => setTimeout(r, 800));
+      const payload = {
         bio: candidateExtraData.bio,
         githubUrl: candidateExtraData.github,
         linkedinUrl: candidateExtraData.linkedin,
-        // Image eka dila nattam use karanna default avatar eka
-        profilePicture: `https://ui-avatars.com/api/?name=${formData.username}&background=random`,
         status: "ACTIVE",
       };
-
-      // Api hadapu aluth CandidateService ekata payload ekai imageFile ekai dekama yawanawa
-      await CandidateService.completeProfile(profilePayload, imageFile);
-
+      await CandidateService.completeProfile(payload, imageFile);
       setIsCandidateModalOpen(false);
+      toast.success("Candidate Registered!");
       navigate("/dashboard/candidate");
     } catch (error) {
-      console.error("Candidate Registration Error:", error);
-      alert(
-        error.message ||
-          "Failed to complete registration. Check backend console.",
-      );
+      toast.error(error.response?.data?.message || "Registration failed");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ================= INTERVIEWER REGISTRATION FLOW =================
   const handleInterviewerComplete = async (interviewerExtraData, imageFile) => {
     setIsSubmitting(true);
     try {
-      // Step 1: Register User
-      await AuthService.register({
-        username: formData.username,
-        password: formData.password,
-        email: formData.email,
-        role: "INTERVIEWER",
-      });
-
-      // Step 2: Auto Login to get Token
+      await AuthService.register({ ...formData, role: "INTERVIEWER" });
       await AuthService.login({
         username: formData.username,
         password: formData.password,
       });
-
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Step 3: Complete Profile payload
-      const profilePayload = {
+      await new Promise((r) => setTimeout(r, 1000));
+      const payload = {
         bio: interviewerExtraData.bio,
         company: interviewerExtraData.company,
         designation: interviewerExtraData.designation,
-        experienceYears: parseInt(interviewerExtraData.experience),
+        experienceYears: Number(interviewerExtraData.experience),
         specialization: interviewerExtraData.specializations.join(", "),
         githubUrl: interviewerExtraData.github,
         linkedinUrl: interviewerExtraData.linkedin,
-        profilePicture: `https://ui-avatars.com/api/?name=${formData.username}&background=random`,
         status: "PENDING",
       };
-
-      // Interviewer ekath multipart widihata yawanna form data eka hadanawa
-      const formDataObj = new FormData();
-      formDataObj.append(
-        "data",
-        new Blob([JSON.stringify(profilePayload)], {
-          type: "application/json",
-        }),
-      );
-
-      if (imageFile) {
-        formDataObj.append("image", imageFile);
-      }
-
-      // InterviewerService eka thama hadala nathi nisa direct axios eken token eka ekka yawanawa.
-      const token = localStorage.getItem("authToken");
-      await axios.post(
-        "http://localhost:8080/api/v1/interviewer/complete-profile",
-        formDataObj,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        },
-      );
-
+      await InterviewerService.completeProfile(payload, imageFile);
       setIsInterviewerModalOpen(false);
+      toast.success("Profile submitted for verification!");
       navigate("/dashboard/interviewer");
     } catch (error) {
-      console.error("Interviewer Registration Error:", error);
-      alert(
-        error.message ||
-          "Failed to complete registration. Check backend console.",
+      toast.error(
+        error.response?.data?.data || "Interviewer registration failed",
       );
     } finally {
       setIsSubmitting(false);
@@ -187,89 +135,71 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex w-full font-sans bg-[#0a0a0a]">
-      {/* Left Side - Branding */}
+      {/* Left Side */}
       <div className="hidden lg:flex flex-col justify-center px-20 w-1/2 bg-[#0a0a0a]">
         <div className="max-w-md">
           <div className="mb-12">
             <Logo />
           </div>
           <h1 className="text-6xl font-black mb-4 leading-tight text-gray-100">
-            Join <br />
-            <span className="text-orange-600">ColloQ.</span>
+            Join <br /> <span className="text-orange-600">ColloQ.</span>
           </h1>
-          <p className="text-lg font-medium leading-relaxed text-gray-500">
-            The journey to your dream career starts here. Practice with industry
-            experts.
+          <p className="text-lg font-medium text-gray-500">
+            Expert mock interviews to sharpen your skills.
           </p>
         </div>
       </div>
 
-      {/* Right Side - Form */}
+      {/* Right Side */}
       <div className="flex flex-col justify-center items-center w-full lg:w-1/2 p-8 bg-[#111111] border-l border-[#2a2a2a]">
         <div className="w-full max-w-[440px]">
-          <h2 className="text-3xl font-bold mb-2 text-gray-100">
+          <h2 className="text-3xl font-bold mb-1 text-gray-100">
             Create Account
           </h2>
-          <p className="mb-8 font-medium text-gray-500 text-sm">
-            Choose your role and enter your details.
+          <p className="mb-8 font-medium text-gray-500 text-xs uppercase tracking-widest">
+            Join as {role}
           </p>
 
-          <form onSubmit={handleInitialRegister} className="space-y-5">
-            {/* Role Selection */}
-            <div className="flex gap-4 mb-6">
+          <form onSubmit={handleInitialRegister} className="space-y-4">
+            {/* Labels are now added above each input */}
+            <div className="flex gap-4 mb-4">
               <div
                 onClick={() => setRole("candidate")}
-                className={`flex-1 flex flex-col items-center justify-center p-4 rounded-sm cursor-pointer transition-all duration-200 border ${
-                  role === "candidate"
-                    ? "border-orange-600 bg-[#1a1a1a]"
-                    : "border-[#333] bg-[#0a0a0a] hover:border-[#444]"
-                }`}
+                className={`flex-1 flex flex-col items-center p-4 rounded-sm cursor-pointer border transition-all ${role === "candidate" ? "border-orange-600 bg-[#1a1a1a]" : "border-[#333] bg-[#0a0a0a]"}`}
               >
                 <SchoolIcon
                   sx={{
                     color: role === "candidate" ? "#ea580c" : "#666",
-                    fontSize: 28,
                     mb: 1,
                   }}
                 />
-                <span
-                  className={`font-bold text-[13px] uppercase tracking-wider ${role === "candidate" ? "text-gray-100" : "text-gray-500"}`}
-                >
+                <span className="font-black text-[10px] uppercase tracking-widest text-gray-100">
                   Candidate
                 </span>
               </div>
-
               <div
                 onClick={() => setRole("interviewer")}
-                className={`flex-1 flex flex-col items-center justify-center p-4 rounded-sm cursor-pointer transition-all duration-200 border ${
-                  role === "interviewer"
-                    ? "border-orange-600 bg-[#1a1a1a]"
-                    : "border-[#333] bg-[#0a0a0a] hover:border-[#444]"
-                }`}
+                className={`flex-1 flex flex-col items-center p-4 rounded-sm cursor-pointer border transition-all ${role === "interviewer" ? "border-orange-600 bg-[#1a1a1a]" : "border-[#333] bg-[#0a0a0a]"}`}
               >
                 <WorkOutlineIcon
                   sx={{
                     color: role === "interviewer" ? "#ea580c" : "#666",
-                    fontSize: 28,
                     mb: 1,
                   }}
                 />
-                <span
-                  className={`font-bold text-[13px] uppercase tracking-wider ${role === "interviewer" ? "text-gray-100" : "text-gray-500"}`}
-                >
+                <span className="font-black text-[10px] uppercase tracking-widest text-gray-100">
                   Interviewer
                 </span>
               </div>
             </div>
 
-            {/* Username Input */}
             <div>
-              <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">
                 Username
               </label>
-              <div className="relative flex items-center">
+              <div className="relative">
                 <PersonOutlineIcon
-                  className="absolute left-4 text-gray-500"
+                  className="absolute left-4 top-3.5 text-gray-600"
                   sx={{ fontSize: 20 }}
                 />
                 <input
@@ -278,20 +208,19 @@ const Register = () => {
                   required
                   value={formData.username}
                   onChange={handleChange}
-                  placeholder="e.g. thilina_dev"
-                  className="w-full pl-12 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
+                  placeholder="thilina_dev"
+                  className="w-full pl-12 pr-4 py-3.5 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 focus:border-orange-500 outline-none text-sm"
                 />
               </div>
             </div>
 
-            {/* Email Input */}
             <div>
-              <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">
                 Email Address
               </label>
-              <div className="relative flex items-center">
+              <div className="relative">
                 <MailOutlineIcon
-                  className="absolute left-4 text-gray-500"
+                  className="absolute left-4 top-3.5 text-gray-600"
                   sx={{ fontSize: 20 }}
                 />
                 <input
@@ -300,21 +229,20 @@ const Register = () => {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="e.g. thilina@gmail.com"
-                  className="w-full pl-12 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
+                  placeholder="dev@example.com"
+                  className="w-full pl-12 pr-4 py-3.5 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 focus:border-orange-500 outline-none text-sm"
                 />
               </div>
             </div>
 
-            {/* Password Grid */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">
                   Password
                 </label>
-                <div className="relative flex items-center">
+                <div className="relative">
                   <LockOutlinedIcon
-                    className="absolute left-3 text-gray-500"
+                    className="absolute left-3 top-3.5 text-gray-600"
                     sx={{ fontSize: 18 }}
                   />
                   <input
@@ -324,10 +252,10 @@ const Register = () => {
                     value={formData.password}
                     onChange={handleChange}
                     placeholder="••••••"
-                    className="w-full pl-10 pr-10 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
+                    className="w-full pl-10 pr-10 py-3.5 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 focus:border-orange-500 outline-none text-sm"
                   />
                   <div
-                    className="absolute right-3 cursor-pointer text-gray-500 hover:text-gray-300"
+                    className="absolute right-3 top-3.5 cursor-pointer text-gray-600"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -338,14 +266,13 @@ const Register = () => {
                   </div>
                 </div>
               </div>
-
               <div>
-                <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2 block">
                   Confirm
                 </label>
-                <div className="relative flex items-center">
+                <div className="relative">
                   <LockOutlinedIcon
-                    className="absolute left-3 text-gray-500"
+                    className="absolute left-3 top-3.5 text-gray-600"
                     sx={{ fontSize: 18 }}
                   />
                   <input
@@ -355,55 +282,60 @@ const Register = () => {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     placeholder="••••••"
-                    className="w-full pl-10 pr-10 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
+                    className="w-full pl-10 pr-4 py-3.5 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 focus:border-orange-500 outline-none text-sm"
                   />
-                  <div
-                    className="absolute right-3 cursor-pointer text-gray-500 hover:text-gray-300"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  >
-                    {showConfirmPassword ? (
-                      <VisibilityOffIcon sx={{ fontSize: 18 }} />
-                    ) : (
-                      <VisibilityIcon sx={{ fontSize: 18 }} />
-                    )}
-                  </div>
                 </div>
               </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 mt-4 rounded-sm font-bold text-white bg-orange-600 hover:bg-orange-500 transition-all active:scale-[0.98] flex justify-center items-center gap-2 uppercase tracking-wider text-sm"
+              disabled={isSubmitting}
+              className="w-full py-4 mt-4 rounded-sm font-black text-white bg-orange-600 hover:bg-orange-500 transition-all uppercase tracking-[0.2em] text-xs"
             >
-              CONTINUE AS {role}
-              {role === "candidate" ? (
-                <SchoolIcon sx={{ fontSize: 18 }} />
-              ) : (
-                <WorkOutlineIcon sx={{ fontSize: 18 }} />
-              )}
+              {isSubmitting ? "PROCESSING..." : `CONTINUE AS ${role}`}
             </button>
           </form>
 
-          <div className="mt-8 text-center text-[13px] font-medium text-gray-500">
+          <div className="flex items-center my-6">
+            <div className="flex-1 h-[1px] bg-[#2a2a2a]"></div>
+            <span className="px-4 text-[9px] text-gray-600 font-black uppercase tracking-widest">
+              OR
+            </span>
+            <div className="flex-1 h-[1px] bg-[#2a2a2a]"></div>
+          </div>
+
+          {/* Custom Google Button using your Logo */}
+          <button
+            onClick={() => googleLogin()}
+            className="w-full py-3.5 rounded-sm border border-[#333] bg-[#0a0a0a] hover:bg-[#161616] text-gray-100 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-[0.98]"
+          >
+            <img
+              src={googleLogo}
+              alt="Google"
+              className="w-5 h-5 object-contain"
+            />
+            Continue with Google
+          </button>
+
+          <p className="mt-8 text-center text-[11px] font-bold text-gray-600 uppercase tracking-widest">
             Already have an account?{" "}
             <a
               href="/login"
-              className="font-bold text-orange-500 hover:text-orange-400 hover:underline uppercase tracking-wide"
+              className="text-orange-500 hover:text-orange-400 transition-colors"
             >
               LOG IN
             </a>
-          </div>
+          </p>
         </div>
       </div>
 
-      {/* ================= MODALS ================= */}
       <CandidateProfileComplete
         isOpen={isCandidateModalOpen}
         onClose={() => setIsCandidateModalOpen(false)}
         onComplete={handleCandidateComplete}
         isSubmitting={isSubmitting}
       />
-
       <InterviewerProfileComplete
         isOpen={isInterviewerModalOpen}
         onClose={() => setIsInterviewerModalOpen(false)}
