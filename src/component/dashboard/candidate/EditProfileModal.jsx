@@ -1,23 +1,27 @@
+// src/component/dashboard/candidate/EditProfileModal.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { colors } from "../../../theme/colors"; // Path eka poddak check karaganna
 import CloseIcon from "@mui/icons-material/Close";
-import SaveIcon from "@mui/icons-material/Save";
+import GitHubIcon from "@mui/icons-material/GitHub";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import FormatQuoteIcon from "@mui/icons-material/FormatQuote";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
+import PersonOutlineIcon from "@mui/icons-material/PersonOutline"; // Username icon eka
+import CircularProgress from "@mui/material/CircularProgress";
+import { colors } from "../../../theme/colors";
+import toast from "react-hot-toast";
 
 const EditProfileModal = ({ isOpen, onClose, userData, onSave }) => {
   const [editFormData, setEditFormData] = useState({ ...userData });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Image preview state ekak
-  const [imagePreview, setImagePreview] = useState(userData.profilePic);
-
-  // File input trigger karanna ref ekak
+  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (isOpen) {
       setEditFormData({ ...userData });
       setImagePreview(userData.profilePic);
+      setSelectedImageFile(null);
     }
   }, [isOpen, userData]);
 
@@ -30,29 +34,47 @@ const EditProfileModal = ({ isOpen, onClose, userData, onSave }) => {
     });
   };
 
-  // Photo eka change karana handler function
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+    if (file && file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
     if (file) {
+      setSelectedImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setImagePreview(reader.result);
-        setEditFormData({ ...editFormData, profilePic: reader.result });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleSaveProfile = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Simulate API Call delay
-    setTimeout(() => {
-      onSave(editFormData);
-      setIsSubmitting(false);
-      onClose();
-    }, 1000);
+    if (!editFormData.username.trim()) {
+      toast.error("Username cannot be empty");
+      return;
+    }
+
+    if (!editFormData.bio.trim()) {
+      toast.error("Please enter a bio");
+      return;
+    }
+
+    setIsSubmitting(true);
+    const safeFormData = { ...editFormData };
+    if (
+      safeFormData.profilePic &&
+      safeFormData.profilePic.startsWith("data:image")
+    ) {
+      safeFormData.profilePic = "";
+    }
+
+    await onSave(safeFormData, selectedImageFile);
+    setIsSubmitting(false);
+    onClose();
   };
 
   return (
@@ -61,71 +83,48 @@ const EditProfileModal = ({ isOpen, onClose, userData, onSave }) => {
         className="w-full max-w-lg border rounded-sm p-8 shadow-2xl relative"
         style={{ backgroundColor: colors.surface, borderColor: colors.border }}
       >
-        {/* Top Accent Line */}
-        <div
-          className="absolute top-0 left-0 w-full h-1"
-          style={{ backgroundColor: colors.primary }}
-        ></div>
-
         <button
           onClick={onClose}
           disabled={isSubmitting}
-          className="absolute top-4 right-4 hover:opacity-100 opacity-60 transition-opacity disabled:opacity-30"
-          style={{ color: colors.textMuted }}
+          className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors disabled:opacity-50"
         >
           <CloseIcon sx={{ fontSize: 20 }} />
         </button>
 
-        <div className="mb-8">
-          <h2
-            className="text-2xl font-bold uppercase tracking-wide"
-            style={{ color: colors.textMain }}
-          >
-            Edit <span style={{ color: colors.primary }}>Profile</span>
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-black text-gray-100 tracking-wide uppercase">
+            EDIT <span className="text-orange-500">PROFILE</span>
           </h2>
-          <p
-            className="text-[13px] font-medium mt-1"
-            style={{ color: colors.textMuted }}
-          >
-            Update your personal information below.
+          <p className="text-sm font-medium text-gray-500 mt-2">
+            Update your details and public links.
           </p>
         </div>
 
         <form onSubmit={handleSaveProfile} className="space-y-6">
-          {/* New Modern Photo Update Section (Centered Hover Overlay) */}
-          <div className="w-full flex justify-center mb-10">
+          <div className="w-full flex justify-center mb-6">
             <div
               className="relative group cursor-pointer w-32 h-32 active:scale-95 transition-transform"
-              onClick={() => !isSubmitting && fileInputRef.current.click()} // Trigger input on click
-              title="Click to change photo"
+              onClick={() => !isSubmitting && fileInputRef.current.click()}
             >
-              {/* Main Photo Container with Primary Border */}
               <div
-                className="w-full h-full border-2 rounded-sm flex items-center justify-center overflow-hidden relative transition-colors"
+                className="w-full h-full border-2 rounded-full flex items-center justify-center overflow-hidden relative transition-colors"
                 style={{
                   borderColor: colors.primary,
                   backgroundColor: colors.background,
                 }}
               >
                 <img
-                  src={imagePreview || userData.profilePic}
+                  src={
+                    imagePreview ||
+                    `https://ui-avatars.com/api/?name=${userData.username}&background=random`
+                  }
                   alt="Profile Preview"
                   className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-300"
                 />
               </div>
-
-              {/* Hover Overlay - Appears only on hover */}
-              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 rounded-sm">
+              <div className="absolute inset-0 bg-black/80 flex flex-col items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                 <PhotoCameraIcon sx={{ color: colors.primary, fontSize: 30 }} />
-                <span
-                  className="text-[10px] font-bold uppercase tracking-widest text-center px-2"
-                  style={{ color: colors.textMain }}
-                >
-                  Change Photo
-                </span>
               </div>
-
-              {/* Hidden File Input */}
               <input
                 type="file"
                 ref={fileInputRef}
@@ -136,175 +135,101 @@ const EditProfileModal = ({ isOpen, onClose, userData, onSave }) => {
             </div>
           </div>
 
-          {/* Username Input */}
+          {/* Username Input Added Here */}
           <div>
-            <label
-              className="block text-[11px] font-bold uppercase tracking-widest mb-1.5"
-              style={{ color: colors.textMuted }}
-            >
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
               Username
             </label>
-            <input
-              type="text"
-              name="username"
-              required
-              disabled={isSubmitting}
-              value={editFormData.username}
-              onChange={handleEditChange}
-              className="w-full px-4 py-2.5 rounded-sm border focus:outline-none text-sm disabled:opacity-50 transition-colors"
-              style={{
-                backgroundColor: colors.inputBg,
-                borderColor: colors.border,
-                color: colors.textMain,
-              }}
-              onFocus={(e) => (e.target.style.borderColor = colors.borderFocus)}
-              onBlur={(e) => (e.target.style.borderColor = colors.border)}
-            />
+            <div className="relative flex items-center">
+              <PersonOutlineIcon
+                className="absolute left-3 text-gray-500"
+                sx={{ fontSize: 18 }}
+              />
+              <input
+                type="text"
+                name="username"
+                required
+                value={editFormData.username}
+                onChange={handleEditChange}
+                disabled={isSubmitting}
+                className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-sm focus:border-orange-500 focus:outline-none transition-colors"
+              />
+            </div>
           </div>
 
-          {/* Bio Input */}
           <div>
-            <label
-              className="block text-[11px] font-bold uppercase tracking-widest mb-1.5"
-              style={{ color: colors.textMuted }}
-            >
-              Bio
+            <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+              Your Bio
             </label>
-            <textarea
-              name="bio"
-              required
-              disabled={isSubmitting}
-              value={editFormData.bio}
-              onChange={handleEditChange}
-              className="w-full px-4 py-3 rounded-sm border focus:outline-none min-h-[100px] resize-none text-sm disabled:opacity-50 transition-colors leading-relaxed"
-              style={{
-                backgroundColor: colors.inputBg,
-                borderColor: colors.border,
-                color: colors.textMain,
-              }}
-              onFocus={(e) => (e.target.style.borderColor = colors.borderFocus)}
-              onBlur={(e) => (e.target.style.borderColor = colors.border)}
-            />
-          </div>
-
-          {/* Social URLs */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label
-                className="block text-[11px] font-bold uppercase tracking-widest mb-1.5"
-                style={{ color: colors.textMuted }}
-              >
-                GitHub URL
-              </label>
-              <input
-                type="text"
-                name="github"
-                required
-                disabled={isSubmitting}
-                value={editFormData.github}
-                onChange={handleEditChange}
-                className="w-full px-4 py-2.5 rounded-sm border focus:outline-none text-sm disabled:opacity-50 transition-colors"
-                style={{
-                  backgroundColor: colors.inputBg,
-                  borderColor: colors.border,
-                  color: colors.textMain,
-                }}
-                onFocus={(e) =>
-                  (e.target.style.borderColor = colors.borderFocus)
-                }
-                onBlur={(e) => (e.target.style.borderColor = colors.border)}
+            <div className="relative">
+              <FormatQuoteIcon
+                className="absolute left-3 top-3 text-gray-500"
+                sx={{ fontSize: 18 }}
               />
-            </div>
-            <div>
-              <label
-                className="block text-[11px] font-bold uppercase tracking-widest mb-1.5"
-                style={{ color: colors.textMuted }}
-              >
-                LinkedIn URL
-              </label>
-              <input
-                type="text"
-                name="linkedin"
+              <textarea
+                name="bio"
                 required
-                disabled={isSubmitting}
-                value={editFormData.linkedin}
+                value={editFormData.bio}
                 onChange={handleEditChange}
-                className="w-full px-4 py-2.5 rounded-sm border focus:outline-none text-sm disabled:opacity-50 transition-colors"
-                style={{
-                  backgroundColor: colors.inputBg,
-                  borderColor: colors.border,
-                  color: colors.textMain,
-                }}
-                onFocus={(e) =>
-                  (e.target.style.borderColor = colors.borderFocus)
-                }
-                onBlur={(e) => (e.target.style.borderColor = colors.border)}
+                disabled={isSubmitting}
+                rows="3"
+                className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-sm focus:border-orange-500 focus:outline-none transition-colors resize-none"
               />
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div
-            className="flex gap-4 pt-5 border-t"
-            style={{ borderColor: colors.border }}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                GitHub
+              </label>
+              <div className="relative flex items-center">
+                <GitHubIcon
+                  className="absolute left-3 text-gray-500"
+                  sx={{ fontSize: 16 }}
+                />
+                <input
+                  type="text"
+                  name="github"
+                  value={editFormData.github}
+                  onChange={handleEditChange}
+                  disabled={isSubmitting}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-sm focus:border-orange-500 focus:outline-none transition-colors"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                LinkedIn
+              </label>
+              <div className="relative flex items-center">
+                <LinkedInIcon
+                  className="absolute left-3 text-gray-500"
+                  sx={{ fontSize: 16 }}
+                />
+                <input
+                  type="text"
+                  name="linkedin"
+                  value={editFormData.linkedin}
+                  onChange={handleEditChange}
+                  disabled={isSubmitting}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-sm focus:border-orange-500 focus:outline-none transition-colors"
+                />
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="w-full py-3.5 mt-2 rounded-sm font-bold text-white bg-orange-600 hover:bg-orange-500 transition-all active:scale-[0.98] flex justify-center items-center gap-2 uppercase tracking-wider text-sm disabled:opacity-70"
           >
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={isSubmitting}
-              className="flex-1 py-3.5 rounded-sm border font-bold uppercase tracking-widest text-[11px] disabled:opacity-50 transition-colors hover:opacity-80"
-              style={{
-                backgroundColor: colors.inputBg,
-                borderColor: colors.border,
-                color: colors.textMuted,
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-[2] py-3.5 rounded-sm font-bold text-white transition-all active:scale-[0.98] uppercase tracking-widest text-[11px] flex justify-center items-center gap-2 disabled:opacity-70"
-              style={{ backgroundColor: colors.primary }}
-              onMouseOver={(e) =>
-                !isSubmitting &&
-                (e.currentTarget.style.backgroundColor = colors.primaryHover)
-              }
-              onMouseOut={(e) =>
-                !isSubmitting &&
-                (e.currentTarget.style.backgroundColor = colors.primary)
-              }
-            >
-              {isSubmitting ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    className="animate-spin h-4 w-4 text-white"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  SAVING...
-                </span>
-              ) : (
-                <>
-                  <SaveIcon sx={{ fontSize: 16 }} /> Save Changes
-                </>
-              )}
-            </button>
-          </div>
+            {isSubmitting ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              "SAVE CHANGES"
+            )}
+          </button>
         </form>
       </div>
     </div>

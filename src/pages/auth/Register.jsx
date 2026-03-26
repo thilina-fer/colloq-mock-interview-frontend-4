@@ -1,7 +1,9 @@
 // src/pages/Register.jsx
 import React, { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import axios from "axios"; // Interviewer fallback call ekata witarak danata use karanawa
+
+// Icons & Components
 import Logo from "../../component/Logo";
 import SchoolIcon from "@mui/icons-material/School";
 import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
@@ -13,6 +15,10 @@ import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 
 import CandidateProfileComplete from "../../component/auth/CandidateProfileComplete";
 import InterviewerProfileComplete from "../../component/auth/InterviewerProfileComplete";
+
+// Services
+import { AuthService } from "../../services/AuthService";
+import { CandidateService } from "../../services/CandidateService";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -54,12 +60,13 @@ const Register = () => {
     }
   };
 
-  // CANDIDATE REGISTRATION FLOW
-  const handleCandidateComplete = async (candidateExtraData) => {
+  // ================= CANDIDATE REGISTRATION FLOW =================
+  // Modal eken ena imageFile ekath dan argument ekak widihata gannawa
+  const handleCandidateComplete = async (candidateExtraData, imageFile) => {
     setIsSubmitting(true);
     try {
       // Step 1: Register User
-      await axios.post("http://localhost:8080/api/v1/auth/register", {
+      await AuthService.register({
         username: formData.username,
         password: formData.password,
         email: formData.email,
@@ -67,47 +74,51 @@ const Register = () => {
       });
 
       // Step 2: Auto Login to get Token
-      const loginRes = await axios.post(
-        "http://localhost:8080/api/v1/auth/login",
-        {
-          username: formData.username,
-          password: formData.password,
-        },
-      );
-      const token = loginRes.data.token;
-      localStorage.setItem("authToken", token);
+      const loginRes = await AuthService.login({
+        username: formData.username,
+        password: formData.password,
+      });
 
-      // Step 3: Complete Profile
-      // TODO: Backend eke me endpoint eka haduwama meka uncomment karanna
+      // Token eka local storage ekata save unada kiyala sure karanna podi delay ekak
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      console.log(
+        "Token for Profile Update:",
+        localStorage.getItem("authToken"),
+      );
+
+      // Step 3: Complete Profile payload
       const profilePayload = {
         bio: candidateExtraData.bio,
         githubUrl: candidateExtraData.github,
         linkedinUrl: candidateExtraData.linkedin,
-        profilePicture: "",
+        // Image eka dila nattam use karanna default avatar eka
+        profilePicture: `https://ui-avatars.com/api/?name=${formData.username}&background=random`,
         status: "ACTIVE",
       };
 
-      /* await axios.post("http://localhost:8080/api/v1/candidate/profile", profilePayload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      */
+      // Api hadapu aluth CandidateService ekata payload ekai imageFile ekai dekama yawanawa
+      await CandidateService.completeProfile(profilePayload, imageFile);
 
       setIsCandidateModalOpen(false);
       navigate("/dashboard/candidate");
     } catch (error) {
-      console.error("Registration Error:", error);
-      alert("Failed to register. Please check console for details.");
+      console.error("Candidate Registration Error:", error);
+      alert(
+        error.message ||
+          "Failed to complete registration. Check backend console.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // INTERVIEWER REGISTRATION FLOW
-  const handleInterviewerComplete = async (interviewerExtraData) => {
+  // ================= INTERVIEWER REGISTRATION FLOW =================
+  const handleInterviewerComplete = async (interviewerExtraData, imageFile) => {
     setIsSubmitting(true);
     try {
       // Step 1: Register User
-      await axios.post("http://localhost:8080/api/v1/auth/register", {
+      await AuthService.register({
         username: formData.username,
         password: formData.password,
         email: formData.email,
@@ -115,18 +126,14 @@ const Register = () => {
       });
 
       // Step 2: Auto Login to get Token
-      const loginRes = await axios.post(
-        "http://localhost:8080/api/v1/auth/login",
-        {
-          username: formData.username,
-          password: formData.password,
-        },
-      );
-      const token = loginRes.data.token;
-      localStorage.setItem("authToken", token);
+      await AuthService.login({
+        username: formData.username,
+        password: formData.password,
+      });
 
-      // Step 3: Complete Profile
-      // TODO: Backend eke me endpoint eka haduwama meka uncomment karanna
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Step 3: Complete Profile payload
       const profilePayload = {
         bio: interviewerExtraData.bio,
         company: interviewerExtraData.company,
@@ -135,21 +142,44 @@ const Register = () => {
         specialization: interviewerExtraData.specializations.join(", "),
         githubUrl: interviewerExtraData.github,
         linkedinUrl: interviewerExtraData.linkedin,
-        profilePicture: "",
+        profilePicture: `https://ui-avatars.com/api/?name=${formData.username}&background=random`,
         status: "PENDING",
       };
 
-      /*
-      await axios.post("http://localhost:8080/api/v1/interviewer/profile", profilePayload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      */
+      // Interviewer ekath multipart widihata yawanna form data eka hadanawa
+      const formDataObj = new FormData();
+      formDataObj.append(
+        "data",
+        new Blob([JSON.stringify(profilePayload)], {
+          type: "application/json",
+        }),
+      );
+
+      if (imageFile) {
+        formDataObj.append("image", imageFile);
+      }
+
+      // InterviewerService eka thama hadala nathi nisa direct axios eken token eka ekka yawanawa.
+      const token = localStorage.getItem("authToken");
+      await axios.post(
+        "http://localhost:8080/api/v1/interviewer/complete-profile",
+        formDataObj,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
+          },
+        },
+      );
 
       setIsInterviewerModalOpen(false);
-      navigate("/dashboard/interviewer"); // Interviewer dashboard eka thiyenawanam
+      navigate("/dashboard/interviewer");
     } catch (error) {
-      console.error("Registration Error:", error);
-      alert("Failed to register. Please check console for details.");
+      console.error("Interviewer Registration Error:", error);
+      alert(
+        error.message ||
+          "Failed to complete registration. Check backend console.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -367,8 +397,6 @@ const Register = () => {
       </div>
 
       {/* ================= MODALS ================= */}
-      {/* Me modals dekata isSubmitting prop eka yawanawa loading pennanna */}
-
       <CandidateProfileComplete
         isOpen={isCandidateModalOpen}
         onClose={() => setIsCandidateModalOpen(false)}
