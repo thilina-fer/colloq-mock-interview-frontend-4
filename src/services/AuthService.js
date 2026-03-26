@@ -25,12 +25,27 @@ apiClient.interceptors.request.use(
 // 3. Auth Service Functions
 export const AuthService = {
   // Login API Call
+  // Login API Call
   login: async (authDTO) => {
     try {
       const response = await apiClient.post("/auth/login", authDTO);
-      if (response.data && response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
+
+      // Backend eken ena response eka mokakda kiyala console eke balamu
+      console.log("Login Full Response:", response.data);
+
+      // Token eka thiyenna puluwan nam 3nma api check karanawa
+      const token =
+        response.data.token || response.data.accessToken || response.data.jwt;
+
+      if (token) {
+        localStorage.setItem("authToken", token);
+        console.log("Token successfully saved!");
+      } else {
+        console.error(
+          "Token ekak backend eken awe naha! AuthResponseDTO eka check karanna.",
+        );
       }
+
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : new Error("Network Error");
