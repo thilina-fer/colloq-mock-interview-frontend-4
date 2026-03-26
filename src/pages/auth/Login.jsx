@@ -1,20 +1,22 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import Logo from "../../component/Logo";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
+import toast from "react-hot-toast"; // Toast notification hadapu nisa meka use karamu
+
+// AuthService එක import කරගන්න
+import { AuthService } from "../../services/AuthService";
 
 const Login = () => {
   const [formData, setFormData] = useState({ username: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
-  const API_BASE_URL = "http://localhost:8080/api/v1/auth";
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -22,21 +24,28 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError("");
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/login`, formData);
-      const { token } = response.data;
+      // 1. AuthService එකේ login method එකට data යවනවා
+      const response = await AuthService.login({
+        username: formData.username,
+        password: formData.password,
+      });
 
-      if (token) {
-        localStorage.setItem("authToken", token);
-        // Login success unama dashboard ekata yanawa
-        navigate("/dashboard/candidate");
-      }
+      // 2. Login success නම් response එකේ token එක එනවා (Service එකෙන්ම eka localStorage save කරනවා)
+      toast.success("Welcome back to ColloQ!");
+
+      // 3. User ගේ Role එක අනුව අදාළ Dashboard එකට යවමු
+      // Backend eken role eka ewanawa nam eka check karanna (Ex: response.role)
+      // Danata api Candidate dashboard ekatama yawamu
+      navigate("/dashboard/candidate");
     } catch (err) {
       console.error("Login Error:", err);
-      setError("Invalid username or password. Please try again.");
+      // Backend එකෙන් එවන error message එක toast එකක් විදිහට පෙන්වනවා
+      toast.error(
+        err.message || "Invalid username or password. Please try again.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -44,7 +53,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex w-full font-sans bg-[#0a0a0a]">
-      {/* Left Side - Branding (Register page eke widihatama) */}
+      {/* Left Side - Branding */}
       <div className="hidden lg:flex flex-col justify-center px-20 w-1/2 bg-[#0a0a0a]">
         <div className="max-w-md">
           <div className="mb-12">
@@ -68,14 +77,6 @@ const Login = () => {
           <p className="mb-8 font-medium text-gray-500 text-sm">
             Enter your credentials to access your account.
           </p>
-
-          {/* Error Message Box - Boxy Style */}
-          {error && (
-            <div className="mb-6 p-4 rounded-sm flex items-center gap-3 text-sm font-bold border border-red-900/50 bg-[#1a0f0f] text-red-500">
-              <span className="block w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-              {error}
-            </div>
-          )}
 
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Username Input */}
@@ -106,12 +107,12 @@ const Login = () => {
                 <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest">
                   Password
                 </label>
-                <a
-                  href="#"
-                  className="text-[12px] font-bold text-orange-500 hover:text-orange-400 transition-colors"
+                <button
+                  type="button"
+                  className="text-[12px] font-bold text-orange-500 hover:text-orange-400"
                 >
                   Forgot Password?
-                </a>
+                </button>
               </div>
               <div className="relative flex items-center">
                 <LockOutlinedIcon
@@ -128,7 +129,7 @@ const Login = () => {
                   className="w-full pl-12 pr-12 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
                 />
                 <div
-                  className="absolute right-3 cursor-pointer p-1 text-gray-500 hover:text-gray-300 transition-colors"
+                  className="absolute right-3 cursor-pointer p-1 text-gray-500 hover:text-gray-300"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -140,38 +141,12 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Submit Button - Boxy Style */}
             <button
               type="submit"
               disabled={isLoading}
               className="w-full py-3.5 mt-4 rounded-sm font-bold text-white bg-orange-600 hover:bg-orange-500 transition-all active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-70 uppercase tracking-wider text-sm"
             >
-              {isLoading ? (
-                <>
-                  <svg
-                    className="animate-spin h-4 w-4 text-white"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                      fill="none"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Authenticating...
-                </>
-              ) : (
-                "Log In to Dashboard"
-              )}
+              {isLoading ? "Authenticating..." : "Log In to Dashboard"}
             </button>
           </form>
 
