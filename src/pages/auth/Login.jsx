@@ -1,14 +1,18 @@
 // src/pages/Login.jsx
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
+import googleLogo from "../../assets/google.png"; // Google logo asset eka
+
+// Icons & Components
 import Logo from "../../component/Logo";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import toast from "react-hot-toast"; // Toast notification hadapu nisa meka use karamu
+import toast from "react-hot-toast";
 
-// AuthService එක import කරගන්න
+// AuthService
 import { AuthService } from "../../services/AuthService";
 
 const Login = () => {
@@ -22,30 +26,59 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ================= GOOGLE LOGIN LOGIC =================
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      setIsLoading(true);
+      try {
+        // Backend eke google login endpoint ekata token eka yawanna
+        const response = await AuthService.loginWithGoogle(
+          tokenResponse.access_token,
+        );
+
+        const userRole = response.role;
+        toast.success("Login Successful via Google!");
+
+        if (userRole === "INTERVIEWER") navigate("/dashboard/interviewer");
+        else if (userRole === "CANDIDATE") navigate("/dashboard/candidate");
+        else navigate("/dashboard/admin");
+      } catch (err) {
+        toast.error("Google Login failed on server.");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    onError: () => toast.error("Google Login Failed"),
+  });
+
+  // ================= STANDARD LOGIN LOGIC =================
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      // 1. AuthService එකේ login method එකට data යවනවා
       const response = await AuthService.login({
         username: formData.username,
         password: formData.password,
       });
 
-      // 2. Login success නම් response එකේ token එක එනවා (Service එකෙන්ම eka localStorage save කරනවා)
+      // Backend response eke dan 'role' eka thiyenawa (AuthServiceImpl eken hadapu nisa)
+      const userRole = response.role;
+
       toast.success("Welcome back to ColloQ!");
 
-      // 3. User ගේ Role එක අනුව අදාළ Dashboard එකට යවමු
-      // Backend eken role eka ewanawa nam eka check karanna (Ex: response.role)
-      // Danata api Candidate dashboard ekatama yawamu
-      navigate("/dashboard/candidate");
+      if (userRole === "INTERVIEWER") {
+        navigate("/dashboard/interviewer");
+      } else if (userRole === "CANDIDATE") {
+        navigate("/dashboard/candidate");
+      } else if (userRole === "ADMIN") {
+        navigate("/dashboard/admin");
+      } else {
+        navigate("/dashboard/candidate");
+      }
     } catch (err) {
       console.error("Login Error:", err);
-      // Backend එකෙන් එවන error message එක toast එකක් විදිහට පෙන්වනවා
-      toast.error(
-        err.message || "Invalid username or password. Please try again.",
-      );
+      toast.error(err.response?.data?.message || "Invalid credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -73,20 +106,20 @@ const Login = () => {
       {/* Right Side - Form Container */}
       <div className="flex flex-col justify-center items-center w-full lg:w-1/2 p-8 bg-[#111111] border-l border-[#2a2a2a]">
         <div className="w-full max-w-[440px]">
-          <h2 className="text-3xl font-bold mb-2 text-gray-100">Log In</h2>
-          <p className="mb-8 font-medium text-gray-500 text-sm">
-            Enter your credentials to access your account.
+          <h2 className="text-3xl font-bold mb-1 text-gray-100">Log In</h2>
+          <p className="mb-8 font-medium text-gray-500 text-xs uppercase tracking-widest">
+            Enter your credentials
           </p>
 
-          <form onSubmit={handleLogin} className="space-y-6">
-            {/* Username Input */}
+          <form onSubmit={handleLogin} className="space-y-5">
+            {/* Username Input with Label */}
             <div>
-              <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">
                 Username
               </label>
               <div className="relative flex items-center">
                 <PersonOutlineIcon
-                  className="absolute left-4 text-gray-500"
+                  className="absolute left-4 text-gray-600"
                   sx={{ fontSize: 20 }}
                 />
                 <input
@@ -95,28 +128,28 @@ const Login = () => {
                   required
                   value={formData.username}
                   onChange={handleChange}
-                  placeholder="Enter your username"
-                  className="w-full pl-12 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
+                  placeholder="thilina_dev"
+                  className="w-full pl-12 pr-4 py-3.5 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 focus:outline-none focus:border-orange-500 transition-colors text-sm"
                 />
               </div>
             </div>
 
-            {/* Password Input */}
+            {/* Password Input with Label */}
             <div>
               <div className="flex justify-between items-center mb-2">
-                <label className="block text-[13px] font-bold text-gray-400 uppercase tracking-widest">
+                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
                   Password
                 </label>
                 <button
                   type="button"
-                  className="text-[12px] font-bold text-orange-500 hover:text-orange-400"
+                  className="text-[10px] font-bold text-orange-500 hover:text-orange-400 uppercase tracking-widest"
                 >
-                  Forgot Password?
+                  Forgot?
                 </button>
               </div>
               <div className="relative flex items-center">
                 <LockOutlinedIcon
-                  className="absolute left-4 text-gray-500"
+                  className="absolute left-4 text-gray-600"
                   sx={{ fontSize: 20 }}
                 />
                 <input
@@ -126,10 +159,10 @@ const Login = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-12 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 placeholder-gray-600 focus:outline-none focus:border-orange-500 transition-colors text-sm"
+                  className="w-full pl-12 pr-12 py-3.5 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 focus:outline-none focus:border-orange-500 transition-colors text-sm"
                 />
                 <div
-                  className="absolute right-3 cursor-pointer p-1 text-gray-500 hover:text-gray-300"
+                  className="absolute right-3 cursor-pointer p-1 text-gray-600 hover:text-gray-300"
                   onClick={() => setShowPassword(!showPassword)}
                 >
                   {showPassword ? (
@@ -144,21 +177,46 @@ const Login = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full py-3.5 mt-4 rounded-sm font-bold text-white bg-orange-600 hover:bg-orange-500 transition-all active:scale-[0.98] flex justify-center items-center gap-2 disabled:opacity-70 uppercase tracking-wider text-sm"
+              className="w-full py-4 mt-2 rounded-sm font-black text-white bg-orange-600 hover:bg-orange-500 transition-all active:scale-[0.98] uppercase tracking-[0.2em] text-xs disabled:opacity-50"
             >
               {isLoading ? "Authenticating..." : "Log In to Dashboard"}
             </button>
           </form>
 
+          {/* Divider */}
+          <div className="flex items-center my-6">
+            <div className="flex-1 h-[1px] bg-[#2a2a2a]"></div>
+            <span className="px-4 text-[9px] text-gray-600 font-black uppercase tracking-widest">
+              OR
+            </span>
+            <div className="flex-1 h-[1px] bg-[#2a2a2a]"></div>
+          </div>
+
+          {/* Custom Google Button */}
+          <button
+            onClick={() => googleLogin()}
+            disabled={isLoading}
+            className="w-full py-3.5 rounded-sm border border-[#333] bg-[#0a0a0a] hover:bg-[#161616] text-gray-100 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all active:scale-[0.98] disabled:opacity-50"
+          >
+            <img
+              src={googleLogo}
+              alt="Google"
+              className="w-5 h-5 object-contain"
+            />
+            Continue with Google
+          </button>
+
           {/* Footer Link */}
-          <div className="mt-8 text-center text-[13px] font-medium text-gray-500">
-            Don't have an account?{" "}
-            <a
-              href="/register"
-              className="font-bold text-orange-500 hover:text-orange-400 hover:underline transition-all uppercase tracking-wide"
-            >
-              Register here
-            </a>
+          <div className="mt-8 text-center">
+            <p className="text-[11px] font-bold text-gray-600 uppercase tracking-widest">
+              Don't have an account?{" "}
+              <a
+                href="/register"
+                className="text-orange-500 hover:text-orange-400 transition-all"
+              >
+                Register here
+              </a>
+            </p>
           </div>
         </div>
       </div>
