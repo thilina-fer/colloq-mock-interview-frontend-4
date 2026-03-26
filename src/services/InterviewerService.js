@@ -17,15 +17,41 @@ apiClient.interceptors.request.use((config) => {
 });
 
 export const InterviewerService = {
-  // Profile එක සම්පූර්ණ කිරීම (Multipart/Form-Data)
+  // 1. Profile එක සම්පූර්ණ කිරීම (Register වෙද්දී)
   completeProfile: async (profileData, imageFile) => {
     try {
       const formData = new FormData();
-      
+      formData.append(
+        "data",
+        new Blob([JSON.stringify(profileData)], { type: "application/json" }),
+      );
+
+      if (imageFile) {
+        formData.append("image", imageFile);
+      }
+
+      const response = await apiClient.post(
+        "/complete-interviewer-profile",
+        formData,
+        {
+          headers: { "Content-Type": "multipart/form-data" },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : new Error("Network Error");
+    }
+  },
+
+  // 2. Profile එක UPDATE කිරීම (Dashboard එකේදී) - මේක තමයි ඔයාට අඩු වෙලා තිබුණේ!
+  updateProfile: async (profileData, imageFile) => {
+    try {
+      const formData = new FormData();
+
       // JSON දත්ත ටික Blob එකක් ලෙස එකතු කිරීම
       formData.append(
         "data",
-        new Blob([JSON.stringify(profileData)], { type: "application/json" })
+        new Blob([JSON.stringify(profileData)], { type: "application/json" }),
       );
 
       // පින්තූරයක් තිබේ නම් එය එකතු කිරීම
@@ -33,10 +59,9 @@ export const InterviewerService = {
         formData.append("image", imageFile);
       }
 
-      const response = await apiClient.post("/complete-interviewer-profile", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+      // Backend එකේ අපි හැදුවේ @PutMapping එකක් නිසා මෙතන .put විය යුතුයි
+      const response = await apiClient.put("/update-profile", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
       return response.data;
     } catch (error) {
@@ -52,5 +77,5 @@ export const InterviewerService = {
     } catch (error) {
       throw error.response ? error.response.data : new Error("Network Error");
     }
-  }
+  },
 };
