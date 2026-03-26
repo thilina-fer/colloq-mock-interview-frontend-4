@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+// src/component/auth/InterviewerProfileComplete.jsx
+import React, { useState, useEffect, useRef } from "react";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -7,6 +8,7 @@ import TimelineIcon from "@mui/icons-material/Timeline";
 import PsychologyIcon from "@mui/icons-material/Psychology";
 import CloseIcon from "@mui/icons-material/Close";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
+import PhotoCameraIcon from "@mui/icons-material/PhotoCamera"; // Photo icon
 
 const InterviewerProfileComplete = ({
   isOpen,
@@ -15,6 +17,10 @@ const InterviewerProfileComplete = ({
   isSubmitting,
 }) => {
   const [selectedSpecs, setSelectedSpecs] = useState([]);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const fileInputRef = useRef(null);
+
   const [formData, setFormData] = useState({
     bio: "",
     company: "",
@@ -25,8 +31,14 @@ const InterviewerProfileComplete = ({
   });
 
   useEffect(() => {
-    if (isOpen) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "unset";
+    if (isOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "unset";
+      // Modal eka close weddi reset karanawa nam hodayi
+      setImagePreview(null);
+      setSelectedImageFile(null);
+    }
     return () => {
       document.body.style.overflow = "unset";
     };
@@ -52,18 +64,33 @@ const InterviewerProfileComplete = ({
     else setSelectedSpecs([...selectedSpecs, spec]);
   };
 
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setSelectedImageFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setImagePreview(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (selectedSpecs.length === 0) {
       alert("Please select at least one specialization!");
       return;
     }
-    onComplete({ ...formData, specializations: selectedSpecs });
+
+    // Backend ekata uppercase join karala yawanawa
+    const finalSpecs = selectedSpecs.map((s) => s.toUpperCase());
+
+    // Register.jsx eke handleInterviewerComplete(data, file) ekata galapenna meka yawamu
+    onComplete({ ...formData, specializations: finalSpecs }, selectedImageFile);
   };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80">
-      <div className="w-full max-w-xl bg-[#111111] border border-[#333] rounded-sm p-8 shadow-2xl relative">
+      <div className="w-full max-w-xl bg-[#111111] border border-[#333] rounded-sm p-8 shadow-2xl relative max-h-[95vh] overflow-y-auto custom-scrollbar">
         <div className="absolute top-0 left-0 w-full h-1 bg-orange-600"></div>
 
         {!isSubmitting && (
@@ -76,12 +103,34 @@ const InterviewerProfileComplete = ({
         )}
 
         <div className="text-center mb-6">
-          <div className="w-14 h-14 bg-[#1a1a1a] border border-[#333] rounded-sm flex items-center justify-center mx-auto mb-4">
-            <VerifiedUserIcon
-              className="text-orange-500"
-              sx={{ fontSize: 28 }}
+          {/* Profile Image Selection Section */}
+          <div
+            className="relative w-20 h-20 mx-auto mb-4 cursor-pointer group"
+            onClick={() => !isSubmitting && fileInputRef.current.click()}
+          >
+            <div className="w-full h-full rounded-full border-2 border-dashed border-[#444] group-hover:border-orange-500 flex items-center justify-center overflow-hidden bg-[#1a1a1a]">
+              {imagePreview ? (
+                <img
+                  src={imagePreview}
+                  alt="Preview"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <PhotoCameraIcon className="text-gray-600 group-hover:text-orange-500" />
+              )}
+            </div>
+            <div className="absolute bottom-0 right-0 bg-orange-600 rounded-full p-1 border-2 border-[#111]">
+              <PhotoCameraIcon sx={{ fontSize: 12, color: "white" }} />
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleFileChange}
             />
           </div>
+
           <h2 className="text-2xl font-bold text-gray-100 uppercase tracking-wide">
             Interviewer <span className="text-orange-500">Verification</span>
           </h2>
@@ -223,32 +272,7 @@ const InterviewerProfileComplete = ({
             disabled={isSubmitting}
             className="w-full py-3.5 mt-2 rounded-sm font-bold text-white bg-orange-600 hover:bg-orange-500 transition-all active:scale-[0.98] uppercase tracking-wider text-[13px] flex justify-center items-center disabled:opacity-70"
           >
-            {isSubmitting ? (
-              <span className="flex items-center gap-2">
-                <svg
-                  className="animate-spin h-4 w-4 text-white"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                    fill="none"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                PROCESSING...
-              </span>
-            ) : (
-              "COMPLETE PROFILE"
-            )}
+            {isSubmitting ? "PROCESSING..." : "COMPLETE PROFILE"}
           </button>
         </form>
       </div>

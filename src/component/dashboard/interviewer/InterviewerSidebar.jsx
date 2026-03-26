@@ -1,5 +1,5 @@
 // src/component/dashboard/interviewer/InterviewerSidebar.jsx
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { colors } from "../../../theme/colors";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
@@ -10,127 +10,53 @@ import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import BusinessIcon from "@mui/icons-material/Business";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
-import DashboardIcon from "@mui/icons-material/Dashboard"; // Aluth icon ekak dashboard ekata yanna
+import DashboardIcon from "@mui/icons-material/Dashboard";
 import { AuthService } from "../../../services/AuthService";
-import InterviewerEditModal from "./InterviewerEditModal";
-import toast from "react-hot-toast";
 
-const InterviewerSidebar = ({ setCurrentView, currentView }) => {
-  // setCurrentView prop eka gaththa
-  const [userData, setUserData] = useState({
-    username: "Loading...",
-    profilePic: "https://ui-avatars.com/api/?name=User&background=random",
-    bio: "",
-    company: "",
-    designation: "",
-    experienceYears: "",
-    specialization: "",
-    github: "",
-    linkedin: "",
-  });
+const InterviewerSidebar = ({
+  setCurrentView,
+  currentView,
+  userData,
+  onEditClick,
+}) => {
+  if (!userData)
+    return (
+      <div className="p-8 text-gray-500 uppercase text-[10px] font-black tracking-widest">
+        Loading Profile...
+      </div>
+    );
 
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const currentUser = await AuthService.getCurrentUser();
-        setUserData({
-          username: currentUser.username,
-          profilePic:
-            currentUser.profilePic ||
-            `https://ui-avatars.com/api/?name=${currentUser.username}&background=random`,
-          bio: currentUser.bio || "Industry Expert Interviewer",
-          company: currentUser.company || "Not Specified",
-          designation: currentUser.designation || "Professional",
-          experienceYears: currentUser.experienceYears || "0",
-          specialization: currentUser.specialization || "Generalist",
-          github: currentUser.githubUrl || "github.com",
-          linkedin: currentUser.linkedinUrl || "linkedin.com",
-        });
-      } catch (error) {
-        console.error("Error fetching interviewer data:", error);
-      }
-    };
-    fetchUserData();
-  }, []);
-
-  const handleSaveData = async (updatedData, imageFile) => {
-    const loadingToast = toast.loading("Updating profile...");
-    try {
-      const profilePayload = {
-        username: updatedData.username,
-        bio: updatedData.bio,
-        company: updatedData.company,
-        designation: updatedData.designation,
-        experienceYears: updatedData.experienceYears,
-        specialization: updatedData.specialization,
-        githubUrl: updatedData.github,
-        linkedinUrl: updatedData.linkedin,
-        profilePicture: updatedData.profilePic,
-      };
-
-      const formData = new FormData();
-      formData.append(
-        "data",
-        new Blob([JSON.stringify(profilePayload)], {
-          type: "application/json",
-        }),
-      );
-      if (imageFile) formData.append("image", imageFile);
-
-      // Backend API eka implement kalama methanata call eka danna
-      setUserData({
-        ...userData,
-        ...updatedData,
-        profilePic: imageFile
-          ? URL.createObjectURL(imageFile)
-          : updatedData.profilePic,
-      });
-
-      toast.success("Profile updated successfully!", { id: loadingToast });
-      if (updatedData.username !== userData.username) {
-        setTimeout(() => AuthService.logout(), 2000);
-      }
-    } catch (error) {
-      toast.error("Failed to update profile", { id: loadingToast });
-    }
-  };
+  const profilePic =
+    userData.profilePic ||
+    `https://ui-avatars.com/api/?name=${userData.username}&background=random`;
 
   return (
     <>
       <div
-        className="w-full h-full border rounded-xl p-8 flex flex-col items-center relative overflow-hidden shadow-sm"
+        className="w-full h-full border rounded-xl p-8 flex flex-col items-center relative overflow-hidden shadow-sm sticky top-6"
         style={{ backgroundColor: colors.surface, borderColor: colors.border }}
       >
+        {/* Background Decorative Icons */}
         <div
           className="absolute -top-20 -left-20 opacity-[0.02] pointer-events-none transform rotate-45"
-          style={{ color: colors.primary || "#000" }}
+          style={{ color: colors.primary }}
         >
           <svg width="250" height="250" viewBox="0 0 24 24" fill="currentColor">
             <path d="M12 2L2 22h20L12 2zm0 4.5l6.5 13h-13L12 6.5z" />
           </svg>
         </div>
 
-        <div
-          className="absolute -bottom-10 -right-12 opacity-[0.03] pointer-events-none transform -rotate-12"
-          style={{ color: colors.textMain || "#000" }}
-        >
-          <svg width="380" height="380" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z" />
-          </svg>
-        </div>
-
-        <div className="relative z-10 group mb-6">
+        {/* Profile Image */}
+        <div className="relative z-10 mb-6">
           <div
-            className="w-32 h-32 rounded-full p-1 border-2 flex items-center justify-center overflow-hidden transition-all duration-300 shadow-md"
+            className="w-32 h-32 rounded-full p-1 border-2 flex items-center justify-center overflow-hidden shadow-md"
             style={{
               borderColor: colors.primary,
               backgroundColor: colors.background,
             }}
           >
             <img
-              src={userData.profilePic}
+              src={profilePic}
               alt="Profile"
               className="w-full h-full rounded-full object-cover"
             />
@@ -144,8 +70,9 @@ const InterviewerSidebar = ({ setCurrentView, currentView }) => {
           {userData.username}
         </h3>
 
+        {/* Bio Section */}
         <div
-          className="w-full mb-8 relative z-10 px-4 py-6 rounded-lg bg-black/5"
+          className="w-full mb-8 relative z-10 px-4 py-6 rounded-lg"
           style={{ backgroundColor: "rgba(0,0,0,0.02)" }}
         >
           <FormatQuoteIcon
@@ -156,10 +83,11 @@ const InterviewerSidebar = ({ setCurrentView, currentView }) => {
             className="text-sm italic font-medium leading-relaxed text-center"
             style={{ color: colors.textMuted }}
           >
-            "{userData.bio}"
+            "{userData.bio || "Professional Interviewer at ColloQ"}"
           </p>
         </div>
 
+        {/* Details List */}
         <div className="w-full space-y-4 mb-8 z-10">
           <div className="flex items-center gap-4 px-2">
             <BusinessIcon sx={{ color: colors.primary, fontSize: 20 }} />
@@ -168,7 +96,8 @@ const InterviewerSidebar = ({ setCurrentView, currentView }) => {
                 Company & Role
               </p>
               <p className="text-xs font-bold text-gray-200">
-                {userData.designation} @ {userData.company}
+                {userData.designation || "Expert"} @{" "}
+                {userData.company || "ColloQ"}
               </p>
             </div>
           </div>
@@ -181,7 +110,7 @@ const InterviewerSidebar = ({ setCurrentView, currentView }) => {
                 Experience
               </p>
               <p className="text-xs font-bold text-gray-200">
-                {userData.experienceYears}+ Years
+                {userData.experienceYears || "0"}+ Years
               </p>
             </div>
           </div>
@@ -191,65 +120,56 @@ const InterviewerSidebar = ({ setCurrentView, currentView }) => {
               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
                 Specialization
               </p>
-              <p className="text-xs font-bold text-gray-200 truncate w-[180px]">
-                {userData.specialization}
+              <p className="text-xs font-bold text-gray-200 truncate w-[160px]">
+                {userData.specialization || "Full Stack"}
               </p>
             </div>
           </div>
         </div>
 
+        {/* Social Icons */}
         <div className="w-full flex justify-center gap-5 mb-10 z-10">
-          <a
-            href={
-              userData.github.startsWith("http")
-                ? userData.github
-                : `https://${userData.github}`
-            }
-            target="_blank"
-            rel="noreferrer"
-            className="group"
-          >
-            <div
-              className="p-3 rounded-full border shadow-sm transition-all duration-300 hover:-translate-y-1"
+          {userData.githubUrl && (
+            <a
+              href={
+                userData.githubUrl.startsWith("http")
+                  ? userData.githubUrl
+                  : `https://${userData.githubUrl}`
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="p-3 rounded-full border hover:-translate-y-1 transition-all"
               style={{
                 borderColor: colors.border,
                 backgroundColor: colors.background,
               }}
             >
-              <GitHubIcon
-                sx={{ color: colors.textMuted, fontSize: 24 }}
-                className="group-hover:text-white transition-colors"
-              />
-            </div>
-          </a>
-          <a
-            href={
-              userData.linkedin.startsWith("http")
-                ? userData.linkedin
-                : `https://${userData.linkedin}`
-            }
-            target="_blank"
-            rel="noreferrer"
-            className="group"
-          >
-            <div
-              className="p-3 rounded-full border shadow-sm transition-all duration-300 hover:-translate-y-1"
+              <GitHubIcon sx={{ color: colors.textMuted, fontSize: 22 }} />
+            </a>
+          )}
+          {userData.linkedinUrl && (
+            <a
+              href={
+                userData.linkedinUrl.startsWith("http")
+                  ? userData.linkedinUrl
+                  : `https://${userData.linkedinUrl}`
+              }
+              target="_blank"
+              rel="noreferrer"
+              className="p-3 rounded-full border hover:-translate-y-1 transition-all"
               style={{
                 borderColor: colors.border,
                 backgroundColor: colors.background,
               }}
             >
-              <LinkedInIcon
-                sx={{ color: colors.textMuted, fontSize: 24 }}
-                className="group-hover:text-blue-600 transition-colors"
-              />
-            </div>
-          </a>
+              <LinkedInIcon sx={{ color: colors.textMuted, fontSize: 22 }} />
+            </a>
+          )}
         </div>
 
+        {/* Action Buttons */}
         <div className="w-full mt-auto space-y-4 z-10">
-          {/* Dashboard View Button (Wallet eke iddi aye dashboard enna) */}
-          {currentView === "wallet" && (
+          {currentView !== "dashboard" && (
             <button
               onClick={() => setCurrentView("dashboard")}
               className="w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5"
@@ -264,9 +184,12 @@ const InterviewerSidebar = ({ setCurrentView, currentView }) => {
           )}
 
           <button
-            onClick={() => setCurrentView("wallet")} // Wallet view ekata maru karanawa
-            className={`w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5
-                  ${currentView === "wallet" ? "bg-orange-600 text-white border-orange-600" : ""}`}
+            onClick={() => setCurrentView("wallet")}
+            className={`w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5 ${
+              currentView === "wallet"
+                ? "bg-orange-600 text-white border-orange-600"
+                : ""
+            }`}
             style={{
               borderColor:
                 currentView === "wallet" ? colors.primary : colors.border,
@@ -279,8 +202,9 @@ const InterviewerSidebar = ({ setCurrentView, currentView }) => {
             Wallet
           </button>
 
+          {/* EDIT BUTTON RESTORED TO PREVIOUS STYLE */}
           <button
-            onClick={() => setIsEditModalOpen(true)}
+            onClick={onEditClick}
             className="w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5"
             style={{
               borderColor: colors.border,
@@ -299,13 +223,6 @@ const InterviewerSidebar = ({ setCurrentView, currentView }) => {
           </button>
         </div>
       </div>
-
-      <InterviewerEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        userData={userData}
-        onSave={handleSaveData}
-      />
     </>
   );
 };
