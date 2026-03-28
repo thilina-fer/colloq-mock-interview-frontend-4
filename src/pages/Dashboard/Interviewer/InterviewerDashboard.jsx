@@ -5,6 +5,7 @@ import Header from "../../../component/dashboard/candidate/Header";
 import Footer from "../../../component/dashboard/candidate/Footer";
 import InterviewerSidebar from "../../../component/dashboard/interviewer/InterviewerSidebar";
 import InterviewerWallet from "../../../component/dashboard/interviewer/InterviewerWallet";
+import InterviewerAvailability from "../../../component/dashboard/interviewer/InterviewerAvailability"; // 💡 Import කළා
 import InterviewerEditModal from "../../../component/dashboard/interviewer/InterviewerEditModal";
 
 // Icons
@@ -28,28 +29,22 @@ const InterviewerDashboard = () => {
   const [userData, setUserData] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // 💡 Polling eka handle karanna useRef use karanawa
   const timeoutRef = useRef(null);
 
   const fetchProfile = async () => {
     try {
       const data = await AuthService.getCurrentUser();
-
-      // 💡 DEBUG: මෙතන console එකේ බලන්න status එක මොකක්ද එන්නේ කියලා
       console.log("CHECKING STATUS:", data?.status);
 
-      // 1. මුලින්ම ආපු දත්ත State එකට දානවා (Pending නම් Pending screen එක පේනවා)
       if (!userData) {
         setUserData(data);
       }
 
-      // 2. දැනට Dashboard එකේ ඉන්න user 'PENDING' නම් සහ API එකෙන් 'ACTIVE' ආවා නම්...
       if (
         userData?.status?.toUpperCase() === "PENDING" &&
         data?.status?.toUpperCase() === "ACTIVE"
       ) {
         toast.success("Account Approved! Logging out...", { duration: 4000 });
-
         setTimeout(() => {
           localStorage.removeItem("authToken");
           window.location.href = "/login";
@@ -57,12 +52,10 @@ const InterviewerDashboard = () => {
         return;
       }
 
-      // 3. තාම Pending නම් විනාඩියකින් ආයේ බලන්න (Polling)
       if (data?.status?.toUpperCase() === "PENDING") {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(fetchProfile, 60000);
       } else {
-        // Active වුණාම state එක update කරන්න
         setUserData(data);
       }
     } catch (error) {
@@ -73,14 +66,11 @@ const InterviewerDashboard = () => {
 
   useEffect(() => {
     fetchProfile();
-
-    // Component eka unmount weddi timeout eka clear karanna
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [userData?.status]); // Status eka change weddi useEffect eka trigger wenna puluwan
+  }, [userData?.status]);
 
-  // =============== UPDATE LOGIC ===============
   const handleProfileSave = async (
     profilePayload,
     imageFile,
@@ -118,7 +108,6 @@ const InterviewerDashboard = () => {
       </div>
     );
 
-  // 💡 PENDING STATUS SCREEN
   if (userData.status?.toUpperCase() === "PENDING") {
     return (
       <div
@@ -128,7 +117,6 @@ const InterviewerDashboard = () => {
         <Header />
         <main className="flex-grow flex items-center justify-center p-6 relative overflow-hidden">
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-600/5 blur-[120px] rounded-full"></div>
-
           <div
             className="max-w-lg w-full p-12 border-2 border-dashed rounded-2xl text-center space-y-8 relative z-10 animate-in zoom-in duration-500"
             style={{
@@ -143,7 +131,6 @@ const InterviewerDashboard = () => {
                 <LockClockIcon sx={{ fontSize: 35, color: colors.primary }} />
               </div>
             </div>
-
             <div className="space-y-4">
               <h2 className="text-2xl font-black uppercase tracking-[0.2em] text-white">
                 Account <span className="text-orange-500">Pending</span>
@@ -156,7 +143,6 @@ const InterviewerDashboard = () => {
                 </span>
               </p>
             </div>
-
             <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
               <p className="text-[9px] font-medium text-gray-600 uppercase tracking-widest text-orange-400 animate-pulse">
                 System is checking for approval status...
@@ -175,7 +161,6 @@ const InterviewerDashboard = () => {
     );
   }
 
-  // ACTIVE DASHBOARD SCREEN
   return (
     <div
       className="min-h-screen flex flex-col font-sans"
@@ -193,11 +178,13 @@ const InterviewerDashboard = () => {
         </div>
 
         <div className="w-full lg:w-3/4 flex flex-col gap-6">
+          {/* 💡 Switch logic for views */}
           {currentView === "wallet" ? (
             <InterviewerWallet />
+          ) : currentView === "availability" ? (
+            <InterviewerAvailability /> // 💡 මෙතනින් Availability load වෙනවා
           ) : (
             <>
-              {/* Dashboard Content Here */}
               <div
                 className="w-full p-8 border rounded-sm shadow-xl space-y-8"
                 style={{

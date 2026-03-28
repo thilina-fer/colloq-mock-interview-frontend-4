@@ -10,6 +10,7 @@ import BusinessIcon from "@mui/icons-material/Business";
 import VerifiedIcon from "@mui/icons-material/Verified";
 import WorkspacePremiumIcon from "@mui/icons-material/WorkspacePremium";
 import DashboardIcon from "@mui/icons-material/Dashboard";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable"; // 💡 අලුත් Icon එක
 import { AuthService } from "../../../services/AuthService";
 
 const InterviewerSidebar = ({
@@ -25,7 +26,6 @@ const InterviewerSidebar = ({
       </div>
     );
 
-  // 💡 Backend එකෙන් එන ඕනෑම නමකින් profile pic එක අරගන්නවා (profilePic හෝ profilePicture)
   const profilePic =
     userData.profilePic ||
     userData.profilePicture ||
@@ -56,7 +56,6 @@ const InterviewerSidebar = ({
               backgroundColor: colors.background,
             }}
           >
-            {/* 💡 key={profilePic} එක නිසා URL එක වෙනස් වුණ ගමන් Photo එක Update වෙනවා */}
             <img
               key={profilePic}
               src={profilePic}
@@ -174,24 +173,41 @@ const InterviewerSidebar = ({
         </div>
 
         {/* Action Buttons */}
-        <div className="w-full mt-auto space-y-4 z-10">
+        <div className="w-full mt-auto space-y-3 z-10">
           {currentView !== "dashboard" && (
             <button
               onClick={() => setCurrentView("dashboard")}
-              className="w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5"
+              className="w-full py-2.5 border font-bold text-[10px] uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5"
               style={{
                 borderColor: colors.primary,
                 color: colors.primary,
                 backgroundColor: "rgba(255,102,0,0.05)",
               }}
             >
-              <DashboardIcon sx={{ fontSize: 18 }} /> Back to Dashboard
+              <DashboardIcon sx={{ fontSize: 16 }} /> Back to Dashboard
             </button>
           )}
 
+          {/* 💡 My Availability Button */}
+          <button
+            onClick={() => setCurrentView("availability")}
+            className={`w-full py-2.5 border font-bold text-[10px] uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5 ${currentView === "availability" ? "bg-orange-600 text-white" : ""}`}
+            style={{
+              borderColor:
+                currentView === "availability" ? colors.primary : colors.border,
+              color: currentView === "availability" ? "#fff" : colors.textMain,
+              backgroundColor:
+                currentView === "availability"
+                  ? colors.primary
+                  : colors.background,
+            }}
+          >
+            <EventAvailableIcon sx={{ fontSize: 16 }} /> My Availability
+          </button>
+
           <button
             onClick={() => setCurrentView("wallet")}
-            className={`w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5 ${currentView === "wallet" ? "bg-orange-600 text-white" : ""}`}
+            className={`w-full py-2.5 border font-bold text-[10px] uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5 ${currentView === "wallet" ? "bg-orange-600 text-white" : ""}`}
             style={{
               borderColor:
                 currentView === "wallet" ? colors.primary : colors.border,
@@ -200,26 +216,26 @@ const InterviewerSidebar = ({
                 currentView === "wallet" ? colors.primary : colors.background,
             }}
           >
-            <AccountBalanceWalletIcon sx={{ fontSize: 18 }} /> My Wallet
+            <AccountBalanceWalletIcon sx={{ fontSize: 16 }} /> My Wallet
           </button>
 
           <button
             onClick={onEditClick}
-            className="w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5"
+            className="w-full py-2.5 border font-bold text-[10px] uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5"
             style={{
               borderColor: colors.border,
               color: colors.textMain,
               backgroundColor: colors.background,
             }}
           >
-            <EditIcon sx={{ fontSize: 18 }} /> Edit Profile
+            <EditIcon sx={{ fontSize: 16 }} /> Edit Profile
           </button>
 
           <button
             onClick={() => AuthService.logout()}
-            className="w-full py-3.5 border border-red-500/30 bg-red-50/10 text-red-600 font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white hover:border-red-600"
+            className="w-full py-2.5 border border-red-500/30 bg-red-50/10 text-red-600 font-bold text-[10px] uppercase tracking-[0.2em] transition-all duration-300 rounded-lg flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white hover:border-red-600"
           >
-            <LogoutIcon sx={{ fontSize: 18 }} /> Sign Out
+            <LogoutIcon sx={{ fontSize: 16 }} /> Sign Out
           </button>
         </div>
       </div>
