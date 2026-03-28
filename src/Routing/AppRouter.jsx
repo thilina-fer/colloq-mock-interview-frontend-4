@@ -5,6 +5,8 @@ import Register from "../pages/auth/Register";
 import LandingPage from "../pages/LandingPage";
 import CandidateDashboard from "../pages/Dashboard/Candidate/CandidateDashboard";
 import InterviewerDashboard from "../pages/Dashboard/Interviewer/InterviewerDashboard";
+import AdminDashboard from "../pages/admin/AdminDashboard";
+
 
 function AppRouter() {
   return (
@@ -15,6 +17,7 @@ function AppRouter() {
         <Route path="/register" element={<Register />} />
         <Route path="/dashboard/candidate" element={<CandidateDashboard />} />
         <Route path="/dashboard/interviewer" element={<InterviewerDashboard />} />
+        <Route path="/dashboard/admin" element={<AdminDashboard />} />
       </Routes>
     </BrowserRouter>
   );
