@@ -28,55 +28,57 @@ const InterviewerDashboard = () => {
   const [userData, setUserData] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // 💡 Polling පාලනය කිරීමට useRef පාවිච්චි කිරීම
+  // 💡 Polling eka handle karanna useRef use karanawa
   const timeoutRef = useRef(null);
 
   const fetchProfile = async () => {
     try {
       const data = await AuthService.getCurrentUser();
 
-      // ✅ වැදගත්ම Logic එක:
-      // කලින් පෙන්වමින් හිටියේ PENDING screen එක නම් සහ දැන් status එක ACTIVE වෙලා නම්...
+      // 💡 DEBUG: මෙතන console එකේ බලන්න status එක මොකක්ද එන්නේ කියලා
+      console.log("CHECKING STATUS:", data?.status);
+
+      // 1. මුලින්ම ආපු දත්ත State එකට දානවා (Pending නම් Pending screen එක පේනවා)
+      if (!userData) {
+        setUserData(data);
+      }
+
+      // 2. දැනට Dashboard එකේ ඉන්න user 'PENDING' නම් සහ API එකෙන් 'ACTIVE' ආවා නම්...
       if (
         userData?.status?.toUpperCase() === "PENDING" &&
         data?.status?.toUpperCase() === "ACTIVE"
       ) {
-        toast.success("Account Approved! Logging out for security...", {
-          duration: 5000,
-          icon: "🎉",
-        });
+        toast.success("Account Approved! Logging out...", { duration: 4000 });
 
-        // තත්පර 3කින් Logout කරලා Login page එකට යවනවා (Token refresh වෙන්න)
         setTimeout(() => {
           localStorage.removeItem("authToken");
           window.location.href = "/login";
         }, 3000);
-
         return;
       }
 
-      setUserData(data);
-
-      // තාම Pending නම් විනාඩියකින් ආයේ check කරන්න schedule කරනවා
+      // 3. තාම Pending නම් විනාඩියකින් ආයේ බලන්න (Polling)
       if (data?.status?.toUpperCase() === "PENDING") {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(fetchProfile, 60000);
+      } else {
+        // Active වුණාම state එක update කරන්න
+        setUserData(data);
       }
     } catch (error) {
-      console.error("Failed to fetch profile:", error);
-      if (error.response?.status === 401 || error.response?.status === 403) {
-        navigate("/login");
-      }
+      console.error("Fetch Error:", error);
+      if (error.response?.status === 401) navigate("/login");
     }
   };
 
   useEffect(() => {
     fetchProfile();
 
-    // Cleanup function
+    // Component eka unmount weddi timeout eka clear karanna
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, []);
+  }, [userData?.status]); // Status eka change weddi useEffect eka trigger wenna puluwan
 
   // =============== UPDATE LOGIC ===============
   const handleProfileSave = async (
@@ -92,8 +94,7 @@ const InterviewerDashboard = () => {
       if (isUsernameChanged) {
         toast("Username changed! Please log in again.", { icon: "⚠️" });
         setTimeout(() => {
-          localStorage.removeItem("authToken");
-          window.location.href = "/login";
+          AuthService.logout();
         }, 2000);
       } else {
         await fetchProfile();
@@ -117,7 +118,7 @@ const InterviewerDashboard = () => {
       </div>
     );
 
-  // 💡 PENDING STATUS ALERT
+  // 💡 PENDING STATUS SCREEN
   if (userData.status?.toUpperCase() === "PENDING") {
     return (
       <div
@@ -150,23 +151,18 @@ const InterviewerDashboard = () => {
               <div className="h-1 w-20 bg-orange-500 mx-auto rounded-full"></div>
               <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed">
                 Your profile is currently under review. <br />
-                Once approved,{" "}
                 <span className="text-orange-500 font-black">
-                  you will be automatically logged out
-                </span>{" "}
-                to refresh your secure session.
+                  Once approved, you will be logged out to refresh your session.
+                </span>
               </p>
             </div>
 
             <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
               <p className="text-[9px] font-medium text-gray-600 uppercase tracking-widest text-orange-400 animate-pulse">
-                Checking for approval status...
+                System is checking for approval status...
               </p>
               <button
-                onClick={() => {
-                  localStorage.removeItem("authToken");
-                  window.location.href = "/login";
-                }}
+                onClick={() => AuthService.logout()}
                 className="w-full py-4 bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-white hover:bg-red-600/10 hover:border-red-600/20 transition-all rounded-sm"
               >
                 Sign Out from System
@@ -179,7 +175,7 @@ const InterviewerDashboard = () => {
     );
   }
 
-  // ACTIVE DASHBOARD
+  // ACTIVE DASHBOARD SCREEN
   return (
     <div
       className="min-h-screen flex flex-col font-sans"
@@ -201,6 +197,7 @@ const InterviewerDashboard = () => {
             <InterviewerWallet />
           ) : (
             <>
+              {/* Dashboard Content Here */}
               <div
                 className="w-full p-8 border rounded-sm shadow-xl space-y-8"
                 style={{
@@ -238,7 +235,6 @@ const InterviewerDashboard = () => {
                     </button>
                   </div>
                 </div>
-
                 <div
                   className="p-6 rounded-sm border border-dashed text-center"
                   style={{
@@ -255,54 +251,6 @@ const InterviewerDashboard = () => {
                       {userData.username}
                     </span>
                     . You are in {mode.toUpperCase()} Mode.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex-grow flex flex-col">
-                <div
-                  className="flex gap-8 mb-4 border-b"
-                  style={{ borderColor: colors.border }}
-                >
-                  <button
-                    onClick={() => setActiveTab("pending")}
-                    className={`pb-4 px-2 font-black text-[10px] uppercase tracking-[0.2em] relative ${activeTab === "pending" ? "text-orange-500" : "text-gray-500 hover:text-gray-300"}`}
-                  >
-                    {mode === "interviewer"
-                      ? "Upcoming Interviews"
-                      : "Pending Sessions"}
-                    {activeTab === "pending" && (
-                      <div className="absolute bottom-0 left-0 w-full h-[2px] bg-orange-500"></div>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("completed")}
-                    className={`pb-4 px-2 font-black text-[10px] uppercase tracking-[0.2em] relative ${activeTab === "completed" ? "text-orange-500" : "text-gray-500 hover:text-gray-300"}`}
-                  >
-                    Completed Sessions
-                    {activeTab === "completed" && (
-                      <div className="absolute bottom-0 left-0 w-full h-[2px] bg-orange-500"></div>
-                    )}
-                  </button>
-                </div>
-
-                <div
-                  className="flex-grow w-full border-2 border-dashed rounded-sm p-12 flex flex-col items-center justify-center min-h-[300px]"
-                  style={{
-                    borderColor: colors.border,
-                    backgroundColor: "rgba(255,255,255,0.01)",
-                  }}
-                >
-                  <div className="w-12 h-12 mb-4 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
-                    <CalendarMonthIcon
-                      sx={{ color: "rgba(255,255,255,0.1)", fontSize: 24 }}
-                    />
-                  </div>
-                  <p
-                    className="text-[10px] font-black uppercase tracking-[0.4em]"
-                    style={{ color: colors.textMuted }}
-                  >
-                    No {activeTab} {mode} sessions found
                   </p>
                 </div>
               </div>
