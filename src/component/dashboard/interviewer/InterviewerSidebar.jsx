@@ -1,4 +1,3 @@
-// src/component/dashboard/interviewer/InterviewerSidebar.jsx
 import React from "react";
 import { colors } from "../../../theme/colors";
 import GitHubIcon from "@mui/icons-material/GitHub";
@@ -26,8 +25,10 @@ const InterviewerSidebar = ({
       </div>
     );
 
+  // 💡 Backend එකෙන් එන ඕනෑම නමකින් profile pic එක අරගන්නවා (profilePic හෝ profilePicture)
   const profilePic =
     userData.profilePic ||
+    userData.profilePicture ||
     `https://ui-avatars.com/api/?name=${userData.username}&background=random`;
 
   return (
@@ -46,19 +47,24 @@ const InterviewerSidebar = ({
           </svg>
         </div>
 
-        {/* Profile Image */}
+        {/* Profile Image Section */}
         <div className="relative z-10 mb-6">
           <div
-            className="w-32 h-32 rounded-full p-1 border-2 flex items-center justify-center overflow-hidden shadow-md"
+            className="w-32 h-32 rounded-full p-1 border-2 flex items-center justify-center overflow-hidden shadow-md transition-all duration-300 hover:shadow-lg"
             style={{
               borderColor: colors.primary,
               backgroundColor: colors.background,
             }}
           >
+            {/* 💡 key={profilePic} එක නිසා URL එක වෙනස් වුණ ගමන් Photo එක Update වෙනවා */}
             <img
+              key={profilePic}
               src={profilePic}
               alt="Profile"
-              className="w-full h-full rounded-full object-cover"
+              className="w-full h-full rounded-full object-cover transition-transform duration-500 hover:scale-110"
+              onError={(e) => {
+                e.target.src = `https://ui-avatars.com/api/?name=${userData.username}&background=random`;
+              }}
             />
           </div>
         </div>
@@ -185,11 +191,7 @@ const InterviewerSidebar = ({
 
           <button
             onClick={() => setCurrentView("wallet")}
-            className={`w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5 ${
-              currentView === "wallet"
-                ? "bg-orange-600 text-white border-orange-600"
-                : ""
-            }`}
+            className={`w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5 ${currentView === "wallet" ? "bg-orange-600 text-white" : ""}`}
             style={{
               borderColor:
                 currentView === "wallet" ? colors.primary : colors.border,
@@ -198,11 +200,9 @@ const InterviewerSidebar = ({
                 currentView === "wallet" ? colors.primary : colors.background,
             }}
           >
-            <AccountBalanceWalletIcon sx={{ fontSize: 18, opacity: 0.7 }} /> My
-            Wallet
+            <AccountBalanceWalletIcon sx={{ fontSize: 18 }} /> My Wallet
           </button>
 
-          {/* EDIT BUTTON RESTORED TO PREVIOUS STYLE */}
           <button
             onClick={onEditClick}
             className="w-full py-3.5 border font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg shadow-sm flex items-center justify-center gap-2 group hover:-translate-y-0.5"
@@ -212,12 +212,12 @@ const InterviewerSidebar = ({
               backgroundColor: colors.background,
             }}
           >
-            <EditIcon sx={{ fontSize: 18, opacity: 0.7 }} /> Edit Profile
+            <EditIcon sx={{ fontSize: 18 }} /> Edit Profile
           </button>
 
           <button
             onClick={() => AuthService.logout()}
-            className="w-full py-3.5 border border-red-500/30 bg-red-50 text-red-600 font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white hover:border-red-600 active:scale-[0.98]"
+            className="w-full py-3.5 border border-red-500/30 bg-red-50/10 text-red-600 font-bold text-xs uppercase tracking-[0.2em] transition-all duration-300 rounded-lg flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white hover:border-red-600"
           >
             <LogoutIcon sx={{ fontSize: 18 }} /> Sign Out
           </button>

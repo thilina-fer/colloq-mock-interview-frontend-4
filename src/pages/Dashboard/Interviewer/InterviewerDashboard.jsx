@@ -1,39 +1,21 @@
-// src/pages/dashboard/interviewer/InterviewerDashboard.jsx
-
-// ... imports (no changes here)
-
 import React, { useState, useEffect } from "react";
-
 import { useNavigate } from "react-router-dom";
-
 import { colors } from "../../../theme/colors";
-
 import Header from "../../../component/dashboard/candidate/Header";
-
 import Footer from "../../../component/dashboard/candidate/Footer";
-
 import InterviewerSidebar from "../../../component/dashboard/interviewer/InterviewerSidebar";
-
 import InterviewerWallet from "../../../component/dashboard/interviewer/InterviewerWallet";
-
 import InterviewerEditModal from "../../../component/dashboard/interviewer/InterviewerEditModal";
 
 // Icons
-
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-
 import EastIcon from "@mui/icons-material/East";
-
 import PersonSearchIcon from "@mui/icons-material/PersonSearch";
-
 import EngineeringIcon from "@mui/icons-material/Engineering";
 
 // Services
-
 import { AuthService } from "../../../services/AuthService";
-
 import { InterviewerService } from "../../../services/InterviewerService";
-
 import toast from "react-hot-toast";
 
 const InterviewerDashboard = () => {
@@ -45,6 +27,7 @@ const InterviewerDashboard = () => {
   const [userData, setUserData] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // පද්ධතියට ලොග් වී සිටින පරිශීලකයාගේ දත්ත ලබා ගැනීම
   const fetchProfile = async () => {
     try {
       const data = await AuthService.getCurrentUser();
@@ -60,7 +43,7 @@ const InterviewerDashboard = () => {
     fetchProfile();
   }, []);
 
-  // UPDATE LOGIC - මෙතන තමයි වෙනස කළේ
+  // =============== UPDATE LOGIC ===============
   const handleProfileSave = async (
     profilePayload,
     imageFile,
@@ -68,11 +51,7 @@ const InterviewerDashboard = () => {
   ) => {
     const loadingToast = toast.loading("Saving changes...");
     try {
-      /**
-       * වැදගත්: ඔයාගේ InterviewerService.updateProfile(profileData, imageFile)
-       * එක ඇතුළේ FormData එක හදනවා නම්, Dashboard එකේදී ආයෙත් FormData හදන්න එපා.
-       * කෙලින්ම payload එකයි file එකයි pass කරන්න.
-       */
+      // 1. Backend එකට දත්ත යවනවා (දැනට String එකක් return කරන්නේ)
       await InterviewerService.updateProfile(profilePayload, imageFile);
 
       toast.success("Profile updated successfully!", { id: loadingToast });
@@ -81,16 +60,16 @@ const InterviewerDashboard = () => {
         toast("Username changed! Please log in again.", { icon: "⚠️" });
         setTimeout(() => {
           localStorage.removeItem("authToken");
-          // window.location.href පාවිච්චි කිරීම වඩාත් සුදුසුයි සම්පූර්ණයෙන්ම reset වීමට
           window.location.href = "/login";
         }, 2000);
       } else {
-        await fetchProfile(); // දත්ත re-fetch කරනවා
+        // 2. 💡 වැදගත්ම දේ: පරණ විදිහට String එකක් එන නිසා,
+        // අපි DB එකෙන් අලුත් දත්ත ටික ආපහු Fetch කරලා State එක Update කරනවා.
+        await fetchProfile();
         setIsEditModalOpen(false);
       }
     } catch (error) {
       console.error("Dashboard Update Error:", error);
-      // Error එකේ ඇත්තම හේතුව පෙන්වන්න
       const errorMsg =
         error.response?.data?.message || error.message || "Update failed";
       toast.error(errorMsg, { id: loadingToast });
@@ -111,6 +90,7 @@ const InterviewerDashboard = () => {
     >
       <Header />
       <main className="flex-grow w-full max-w-[1400px] mx-auto p-6 flex flex-col lg:flex-row gap-6">
+        {/* Sidebar Section */}
         <div className="w-full lg:w-1/4">
           <InterviewerSidebar
             setCurrentView={setCurrentView}
@@ -120,6 +100,7 @@ const InterviewerDashboard = () => {
           />
         </div>
 
+        {/* Main Content Section */}
         <div className="w-full lg:w-3/4 flex flex-col gap-6">
           {currentView === "wallet" ? (
             <InterviewerWallet />
@@ -138,8 +119,7 @@ const InterviewerDashboard = () => {
                     className="text-sm font-black uppercase tracking-[0.3em]"
                     style={{ color: colors.textMain }}
                   >
-                    {" "}
-                    Practice Mode{" "}
+                    Practice Mode
                   </h2>
                   <div
                     className="flex p-1 rounded-sm border"
@@ -165,68 +145,25 @@ const InterviewerDashboard = () => {
                   </div>
                 </div>
 
-                {mode === "interviewer" ? (
-                  <div
-                    className="p-6 rounded-sm border border-dashed text-center"
-                    style={{
-                      borderColor: colors.border,
-                      backgroundColor: "rgba(255,255,255,0.02)",
-                    }}
+                <div
+                  className="p-6 rounded-sm border border-dashed text-center"
+                  style={{
+                    borderColor: colors.border,
+                    backgroundColor: "rgba(255,255,255,0.02)",
+                  }}
+                >
+                  <p
+                    className="text-xs font-medium uppercase tracking-widest"
+                    style={{ color: colors.textMuted }}
                   >
-                    <p
-                      className="text-xs font-medium uppercase tracking-widest"
-                      style={{ color: colors.textMuted }}
-                    >
-                      Welcome back,{" "}
-                      <span style={{ color: colors.primary }}>
-                        {userData.username}
-                      </span>
-                      . You are in Interviewer Mode.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-6 animate-in fade-in duration-500">
-                    <div
-                      className="flex items-start gap-5 p-6 rounded-sm border"
-                      style={{
-                        borderColor: "rgba(250, 204, 21, 0.2)",
-                        backgroundColor: "rgba(250, 204, 21, 0.05)",
-                      }}
-                    >
-                      <div
-                        className="p-3 rounded-sm text-black"
-                        style={{ backgroundColor: "#facc15" }}
-                      >
-                        <CalendarMonthIcon />
-                      </div>
-                      <div>
-                        <h3
-                          className="font-bold uppercase tracking-wider text-sm"
-                          style={{ color: "#facc15" }}
-                        >
-                          Improve your skills
-                        </h3>
-                        <p
-                          className="text-xs mt-2 leading-relaxed font-medium"
-                          style={{ color: colors.textMuted }}
-                        >
-                          Book a mock interview session with industry experts.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      className="w-full py-5 rounded-sm font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all border hover:bg-white hover:text-black"
-                      style={{
-                        backgroundColor: colors.background,
-                        borderColor: colors.border,
-                        color: colors.textMain,
-                      }}
-                    >
-                      Book a mock interview session{" "}
-                      <EastIcon sx={{ fontSize: 18 }} />
-                    </button>
-                  </div>
-                )}
+                    Welcome back,{" "}
+                    <span style={{ color: colors.primary }}>
+                      {userData.username}
+                    </span>
+                    . You are in{" "}
+                    {mode === "interviewer" ? "Interviewer" : "Candidate"} Mode.
+                  </p>
+                </div>
               </div>
 
               {/* Sessions Table Area */}
@@ -256,6 +193,7 @@ const InterviewerDashboard = () => {
                     )}
                   </button>
                 </div>
+
                 <div
                   className="flex-grow w-full border-2 border-dashed rounded-sm p-12 flex flex-col items-center justify-center min-h-[300px]"
                   style={{
@@ -267,8 +205,7 @@ const InterviewerDashboard = () => {
                     className="text-[10px] font-black uppercase tracking-[0.4em]"
                     style={{ color: colors.textMuted }}
                   >
-                    {" "}
-                    No {activeTab} {mode} sessions found{" "}
+                    No {activeTab} {mode} sessions found
                   </p>
                 </div>
               </div>
@@ -277,6 +214,8 @@ const InterviewerDashboard = () => {
         </div>
       </main>
       <Footer />
+
+      {/* Edit Modal */}
       <InterviewerEditModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
