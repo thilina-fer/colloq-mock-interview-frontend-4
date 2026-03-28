@@ -15,6 +15,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import AdminSidebar from "../../component/dashboard/admin/AdminSidebar";
 import AdminOverview from "../../component/dashboard/admin/AdminOverview";
 import InterviewerVerification from "../../component/dashboard/admin/InterviewerVerification";
+import LevelManagement from "../../component/dashboard/admin/LevelManagement"; // 💡 මෙන්න මේක අමතක කරන්න එපා
 import Logo from "../../component/Logo";
 
 const AdminDashboard = () => {
@@ -27,6 +28,11 @@ const AdminDashboard = () => {
         return <AdminOverview />;
       case "verification":
         return <InterviewerVerification />;
+
+      // ✅ මෙන්න මේක තමයි අලුතින් එකතු කළ කොටස
+      case "levels":
+        return <LevelManagement />;
+
       case "users":
         return (
           <div className="p-20 border border-dashed border-[#333] text-center uppercase text-[10px] font-black tracking-[0.3em] text-gray-600">
@@ -55,7 +61,7 @@ const AdminDashboard = () => {
           <Logo />
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-[10px] font-black text-gray-500 uppercase">
+          <span className="text-[10px] font-black text-gray-500 uppercase font-sans">
             Admin Session: Active
           </span>
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>

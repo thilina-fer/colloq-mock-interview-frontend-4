@@ -6,6 +6,7 @@ import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
 import AssessmentIcon from "@mui/icons-material/Assessment";
 import LogoutIcon from "@mui/icons-material/Logout";
+import LayersIcon from "@mui/icons-material/Layers"; // 💡 ලෙවල් සඳහා අලුත් Icon එකක්
 import { AuthService } from "../../../services/AuthService";
 
 const AdminSidebar = ({ currentView, setCurrentView }) => {
@@ -24,6 +25,12 @@ const AdminSidebar = ({ currentView, setCurrentView }) => {
       id: "verification",
       label: "Interviewer Verify",
       icon: <VerifiedUserIcon sx={{ fontSize: 20 }} />,
+    },
+    // 💡 අලුතින් එකතු කළ Session Levels බට්න් එක
+    {
+      id: "levels",
+      label: "Session Levels",
+      icon: <LayersIcon sx={{ fontSize: 20 }} />,
     },
     {
       id: "payouts",
