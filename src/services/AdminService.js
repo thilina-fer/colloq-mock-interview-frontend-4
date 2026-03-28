@@ -34,4 +34,12 @@ export const AdminService = {
     console.log("DEBUG: AdminService Approve Response:", response.data);
     return response.data;
   },
+
+  rejectInterviewer: async (id) => {
+    const token = localStorage.getItem("authToken");
+    const response = await axios.delete(`${API_URL}/reject-interviewer/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data; // 💡 මෙතනත් statusCode: 200 ලැබෙනවා
+  },
 };

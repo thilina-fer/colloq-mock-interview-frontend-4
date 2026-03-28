@@ -42,6 +42,7 @@ const InterviewerVerification = () => {
     setExpandedId(expandedId === id ? null : id);
   };
 
+  // ✅ Approve කිරීමේ Logic එක
   const handleApprove = async (e, id) => {
     e.stopPropagation();
     const loadingToast = toast.loading("Approving interviewer...");
@@ -50,22 +51,16 @@ const InterviewerVerification = () => {
     try {
       const res = await AdminService.approveInterviewer(id);
 
-      // 💡 Screenshot එකට අනුව මෙතන එන්නේ statusCode: 200
-      console.log("DEBUG: Status code is:", res.statusCode);
-
       if (res && res.statusCode === 200) {
-        // ✅ සාර්ථක Toast එක
         toast.success(res.message || "Interviewer Approved Successfully!", {
           id: loadingToast,
         });
 
-        // ✅ UI එකෙන් Card එක අයින් කරන කොටස
-        // String() conversion එක දාන්න මොකද ID එක Number එකක් නිසා
+        // UI එකෙන් අයින් කිරීම
         setInterviewers((prev) =>
           prev.filter((item) => String(item.interviewerId) !== String(id)),
         );
       } else {
-        // ❌statusCode එක 200 නොවුණොත්
         toast.error(res.message || "Approval failed", { id: loadingToast });
       }
     } catch (error) {
@@ -75,6 +70,41 @@ const InterviewerVerification = () => {
       setActionId(null);
     }
   };
+
+  // ✅ Reject කිරීමේ Logic එක (NEW)
+  const handleReject = async (e, id) => {
+    e.stopPropagation();
+
+    // confirm box එකක් දාමු අතින් එබුනොත් අපරාදේ නිසා
+    if (!window.confirm("Are you sure you want to reject this interviewer?"))
+      return;
+
+    const loadingToast = toast.loading("Rejecting interviewer...");
+    setActionId(id);
+
+    try {
+      const res = await AdminService.rejectInterviewer(id);
+
+      if (res && res.statusCode === 200) {
+        toast.success(res.message || "Interviewer Rejected Successfully!", {
+          id: loadingToast,
+        });
+
+        // UI එකෙන් අයින් කිරීම
+        setInterviewers((prev) =>
+          prev.filter((item) => String(item.interviewerId) !== String(id)),
+        );
+      } else {
+        toast.error(res.message || "Reject failed", { id: loadingToast });
+      }
+    } catch (error) {
+      console.error("Reject error:", error);
+      toast.error("Network Error: Action failed", { id: loadingToast });
+    } finally {
+      setActionId(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="h-[400px] flex items-center justify-center">
@@ -90,7 +120,6 @@ const InterviewerVerification = () => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-700">
-      {/* Header Section */}
       <div className="px-2 flex justify-between items-end">
         <div>
           <h2 className="text-xl font-black uppercase tracking-[0.2em] text-white">
@@ -103,7 +132,6 @@ const InterviewerVerification = () => {
         </div>
       </div>
 
-      {/* Applications Container */}
       <div
         className="w-full border-2 border-dashed rounded-xl p-6 flex flex-col gap-4 overflow-y-auto custom-scrollbar"
         style={{
@@ -145,7 +173,6 @@ const InterviewerVerification = () => {
                       : colors.border,
                 }}
               >
-                {/* Table Row Content */}
                 <div
                   className={`w-full h-24 flex items-center px-10 transition-all duration-300 group cursor-pointer ${
                     expandedId === req.interviewerId ? "bg-orange-600/5" : ""
@@ -157,7 +184,6 @@ const InterviewerVerification = () => {
                   }}
                   onClick={() => handleToggle(req.interviewerId)}
                 >
-                  {/* Profile Pic */}
                   <div className="flex-shrink-0">
                     <div
                       className="w-12 h-12 rounded-full border-2 p-0.5 overflow-hidden"
@@ -179,7 +205,6 @@ const InterviewerVerification = () => {
                     </div>
                   </div>
 
-                  {/* Info */}
                   <div className="ml-10 min-w-[180px]">
                     <h3 className="text-xs font-black text-white uppercase tracking-wider group-hover:text-orange-500 transition-colors">
                       {req.username}
@@ -205,7 +230,6 @@ const InterviewerVerification = () => {
                     </p>
                   </div>
 
-                  {/* Actions */}
                   <div className="flex items-center gap-3 ml-10 pl-10 border-l border-white/5">
                     <button
                       onClick={(e) => {
@@ -233,13 +257,21 @@ const InterviewerVerification = () => {
                       )}
                     </button>
 
-                    <button className="w-10 h-10 flex items-center justify-center bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white border border-red-500/20 rounded-sm transition-all">
-                      <CancelIcon sx={{ fontSize: 18 }} />
+                    {/* ✅ REJECT BUTTON FIXED */}
+                    <button
+                      disabled={actionId === req.interviewerId}
+                      onClick={(e) => handleReject(e, req.interviewerId)}
+                      className="w-10 h-10 flex items-center justify-center bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white border border-red-500/20 rounded-sm transition-all disabled:opacity-50"
+                    >
+                      {actionId === req.interviewerId ? (
+                        <CircularProgress size={16} color="inherit" />
+                      ) : (
+                        <CancelIcon sx={{ fontSize: 18 }} />
+                      )}
                     </button>
                   </div>
                 </div>
 
-                {/* Expanded Details */}
                 <AnimatePresence>
                   {expandedId === req.interviewerId && (
                     <motion.div
