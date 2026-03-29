@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { colors } from "../../../theme/colors";
 import TabNavigation from "./TabNavigation";
 import AddSlotView from "./AddSlotView";
-import ConfirmSlotsView from "./ConfirmSlotsView";
+import ConfirmSlotsView from "./ConformedSlot";
 
 const InterviewerAvailability = () => {
   const [activeTab, setActiveTab] = useState("add");
