@@ -25,6 +25,19 @@ const AvailabilityService = {
       throw error.response ? error.response.data : error;
     }
   },
+
+    getAllAvailabilities: async () => {
+        const token = localStorage.getItem("authToken");
+        try {
+            const response = await axios.get(`${API_BASE_URL}/get-all`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return response.data;
+        } catch (error) {
+            console.error("Fetch Error:", error);
+            throw error;
+        }
+    },
 };
 
 export default AvailabilityService;
