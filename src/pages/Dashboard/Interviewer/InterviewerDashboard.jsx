@@ -185,7 +185,7 @@ const InterviewerDashboard = () => {
             <InterviewerAvailability /> // 💡 මෙතනින් Availability load වෙනවා
           ) : (
             <>
-              <div
+              {/* <div
                 className="w-full p-8 border rounded-sm shadow-xl space-y-8"
                 style={{
                   backgroundColor: colors.surface,
@@ -240,7 +240,7 @@ const InterviewerDashboard = () => {
                     . You are in {mode.toUpperCase()} Mode.
                   </p>
                 </div>
-              </div>
+              </div> */}
             </>
           )}
         </div>
