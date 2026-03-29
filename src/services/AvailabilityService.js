@@ -38,6 +38,20 @@ const AvailabilityService = {
             throw error;
         }
     },
+
+    deleteAvailability: async (id) => {
+    const token = localStorage.getItem("authToken");
+    try {
+        const response = await axios.delete(`${API_BASE_URL}/delete/${id}`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        // Backend එකෙන් එවන error message එක (උදා: Already booked) ලබා ගැනීම
+        const message = error.response?.data || "Delete failed";
+        throw new Error(message);
+    }
+}
 };
 
 export default AvailabilityService;
