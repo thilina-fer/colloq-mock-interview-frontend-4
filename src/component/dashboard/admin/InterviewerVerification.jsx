@@ -21,11 +21,19 @@ const InterviewerVerification = () => {
   const [actionId, setActionId] = useState(null);
 
   // 1. Backend එකෙන් Pending Interviewers ලා ලබා ගැනීම
+  // 1. Backend එකෙන් Pending Interviewers ලා ලබා ගැනීම
   const fetchPendingInterviewers = async () => {
     setIsLoading(true);
     try {
-      const data = await AdminService.getPendingInterviewers();
-      setInterviewers(data || []);
+      const response = await AdminService.getPendingInterviewers();
+
+      // 💡 වැදගත්: AdminService එකෙන් එන්නේ Object එකක් නම්,
+      // ඒකේ ඇතුළේ තියෙන data array එක මෙහෙම ගන්න:
+      const interviewerList = response.data || response;
+
+      setInterviewers(Array.isArray(interviewerList) ? interviewerList : []);
+
+      console.log("✅ Interviewers loaded:", interviewerList);
     } catch (error) {
       console.error("Fetch error:", error);
       toast.error("Failed to load applications");
