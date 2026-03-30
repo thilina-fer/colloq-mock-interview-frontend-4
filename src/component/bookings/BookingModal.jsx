@@ -91,31 +91,27 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
   // 3. Confirm Booking
   const handleConfirmBooking = async () => {
     if (!selectedSlot) return;
-
     setIsBookingLoading(true);
     try {
-      const bookingData = {
+      const bookingRequest = {
         interviewerId: selectedInterviewer.interviewerId,
         availabilityId: selectedSlot.availabilityId,
         levelId: selectedInterviewer.levelId,
-        status: "PENDING",
+        jobType: "Mock Interview", // 👈 මේ වගේ field එකක් backend එකේ ඉල්ලනවා නම් දෙන්න
+        candidateNote: "Note from frontend",
       };
 
-      await axios.post(
-        "http://localhost:8080/api/v1/booking/save",
-        bookingData,
-        { headers },
-      );
+      // 🎯 අපේ අලුත් Service එක පාවිච්චි කරමු
+      await BookingService.saveBooking(bookingRequest);
 
       toast.success("Booking request sent successfully!");
-      onClose(); // Modal එක වහන්න
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Booking failed.");
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data || "Booking failed.");
     } finally {
       setIsBookingLoading(false);
     }
   };
-
   // 4. Filtering Logic
   const filteredInterviewers = interviewers.filter((interviewer) => {
     const matchesSpec =

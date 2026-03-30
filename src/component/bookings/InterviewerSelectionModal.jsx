@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast from "react-hot-toast";
+
+// Icons
 import BoltIcon from "@mui/icons-material/Bolt";
 import CloseIcon from "@mui/icons-material/Close";
 import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
+
+// Components
 import InterviewerCard from "./InterviewerCard";
-import { colors } from "../../theme/colors";
 
 const InterviewerSelectionModal = ({ isOpen, onClose }) => {
   const [step, setStep] = useState(1);
@@ -14,7 +17,7 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
   const [dbLevels, setDbLevels] = useState([]);
   const [selectedInterviewer, setSelectedInterviewer] = useState(null);
 
-  // Availability & Booking
+  // Availability & Booking States
   const [availabilitySlots, setAvailabilitySlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isSlotsLoading, setIsSlotsLoading] = useState(false);
@@ -25,7 +28,7 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
     specialization: "All",
   });
 
-  // 🎯 LocalStorage එකේ නම authToken බව තහවුරු කරගන්න
+  // 🎯 Token එක LocalStorage එකෙන් නිවැරදි නම (authToken) පාවිච්චි කර ලබා ගැනීම
   const token = localStorage.getItem("authToken");
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -38,6 +41,7 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen]);
 
+  // 1. Levels සහ Interviewers දත්ත ලබා ගැනීම
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
@@ -54,6 +58,7 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
     }
   };
 
+  // 2. තෝරාගත් Interviewer ගේ කාල වේලාවන් ලබා ගැනීම
   const fetchAvailability = async (interviewerId) => {
     setIsSlotsLoading(true);
     try {
@@ -61,7 +66,7 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
         `http://localhost:8080/api/v1/availability/interviewer/${interviewerId}`,
         { headers },
       );
-      // 🎯 Backend එකෙන් Array එකක් එන නිසා res.data පාවිච්චි කරන්න
+      // Backend එකෙන් කෙලින්ම Array එකක් එන නිසා (Postman එකේ වගේ) safe mapping එකක් කරමු
       const data = Array.isArray(res.data) ? res.data : res.data.data;
       setAvailabilitySlots(data || []);
     } catch (err) {
@@ -77,30 +82,46 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
     setStep(2);
   };
 
+  // 3. 🎯 Booking එක Confirm කිරීමේ ප්‍රධාන Logic එක
   const handleConfirmBooking = async () => {
-    if (!selectedSlot) return;
+    if (!selectedSlot) {
+      toast.error("Please select a time slot first.");
+      return;
+    }
+
     setIsBookingLoading(true);
     try {
+      // Backend එකේ hireInterviewer method එක ඉල්ලන payload එක
       const bookingRequest = {
         interviewerId: selectedInterviewer.interviewerId,
         availabilityId: selectedSlot.availabilityId,
-        levelId: selectedInterviewer.levelId, // 👈 Level ID එකත් යවමු
-        status: "PENDING",
+        levelId: selectedInterviewer.levelId,
+        jobType: "Mock Interview", // Default value එකක් හෝ prompt එකකින් ගත හැක
+        candidateNote: "Scheduled via ColloQ Dashboard",
       };
+
+      // 🎯 Postman එකේ වගේ නිවැරදි Endpoint එක: /api/v1/bookings/hire
       await axios.post(
-        "http://localhost:8080/api/v1/booking/save",
+        "http://localhost:8080/api/v1/bookings/hire",
         bookingRequest,
         { headers },
       );
-      toast.success("Booking request sent! Expert will notify you.");
-      onClose();
+
+      toast.success("Booking request sent! Waiting for approval.");
+      onClose(); // Modal එක වහන්න
     } catch (err) {
-      toast.error(err.response?.data?.message || "Booking failed.");
+      // Error message එක පෙන්වීම (Backend එකෙන් එවන message එකට ප්‍රමුඛතාවය දෙමින්)
+      const errorMsg =
+        typeof err.response?.data === "string"
+          ? err.response.data
+          : err.response?.data?.message || "Booking failed.";
+      toast.error(errorMsg);
     } finally {
       setIsBookingLoading(false);
     }
   };
 
+  // 4. Filtering Logic
   const filteredInterviewers = interviewers.filter((inv) => {
     const matchesSpec =
       activeFilters.specialization === "All" ||
@@ -118,16 +139,17 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/95 backdrop-blur-md">
       <div className="w-full max-w-6xl h-[90vh] overflow-hidden rounded-sm border border-white/10 shadow-2xl relative flex flex-row bg-[#0a0a0a]">
+        {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-white z-[110]"
+          className="absolute top-6 right-6 p-2 rounded-full hover:bg-white/10 text-white z-[110] transition-colors"
         >
           <CloseIcon />
         </button>
 
         {step === 1 ? (
           <>
-            {/* Filters Sidebar - Modern Boxy Style */}
+            {/* Filters Sidebar */}
             <div className="w-72 border-r border-white/5 p-8 space-y-8 bg-black/40 overflow-y-auto no-scrollbar">
               <h2 className="text-xl font-black uppercase text-white tracking-[0.2em]">
                 Filters
@@ -227,12 +249,12 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
             </div>
           </>
         ) : (
-          /* Step 2: Session Booking - Optimized Boxes */
+          /* Step 2: Session Booking */
           <div className="flex-1 flex flex-col items-center justify-center p-12 bg-[#080808] overflow-y-auto custom-scrollbar">
             <div className="w-full max-w-2xl space-y-10 animate-in slide-in-from-right duration-500">
               <button
                 onClick={() => setStep(1)}
-                className="text-[10px] font-black uppercase text-orange-500 hover:text-orange-400 flex items-center gap-2"
+                className="text-[10px] font-black uppercase text-orange-500 hover:text-orange-400 flex items-center gap-2 transition-colors"
               >
                 ← Back to Selection
               </button>
@@ -250,7 +272,7 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
               </div>
 
               {/* Fee Box */}
-              <div className="border border-white/10 rounded-sm p-10 bg-white/5 flex flex-col items-center justify-center space-y-3 group hover:border-orange-500/40 transition-all duration-500 shadow-inner">
+              <div className="border border-white/10 rounded-sm p-10 bg-white/5 flex flex-col items-center justify-center space-y-3 shadow-inner">
                 <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
                   Total Session Fee
                 </span>
