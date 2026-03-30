@@ -4,10 +4,9 @@ const API_BASE_URL = "http://localhost:8080/api/v1/availability";
 
 const AvailabilityService = {
   saveBatch: async (slotsArray) => {
-    // 💡 මෙතන ඔයා Token එක save කරලා තියෙන Key එක හරියටම බලන්න (සාමාන්‍යයෙන් 'token' හෝ 'jwt')
     const token = localStorage.getItem("authToken");
 
-    console.log("Sending Token:", token); // 👈 මේක Console එකේ බලන්න පුළුවන් නේද කියලා
+    console.log("Sending Token:", token);
 
     try {
       const response = await axios.post(
@@ -15,7 +14,6 @@ const AvailabilityService = {
         slotsArray,
         {
           headers: {
-            // 💡 Bearer එකට පස්සේ Space එකක් තියෙන්නම ඕනේ
             Authorization: `Bearer ${token}`,
           },
         },
@@ -26,32 +24,48 @@ const AvailabilityService = {
     }
   },
 
-    getAllAvailabilities: async () => {
-        const token = localStorage.getItem("authToken");
-        try {
-            const response = await axios.get(`${API_BASE_URL}/get-all`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            return response.data;
-        } catch (error) {
-            console.error("Fetch Error:", error);
-            throw error;
-        }
-    },
-
-    deleteAvailability: async (id) => {
+  getAllAvailabilities: async () => {
     const token = localStorage.getItem("authToken");
     try {
-        const response = await axios.delete(`${API_BASE_URL}/delete/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        return response.data;
+      const response = await axios.get(`${API_BASE_URL}/get-all`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
     } catch (error) {
-        // Backend එකෙන් එවන error message එක (උදා: Already booked) ලබා ගැනීම
-        const message = error.response?.data || "Delete failed";
-        throw new Error(message);
+      console.error("Fetch Error:", error);
+      throw error;
     }
-}
+  },
+
+  // 🎯 🚀 අලුතින්ම එකතු කළ කොටස: Interviewer අනුව Slots Fetch කිරීම
+  getAvailabilitiesByInterviewerId: async (interviewerId) => {
+    const token = localStorage.getItem("authToken");
+    try {
+      const response = await axios.get(
+        `${API_BASE_URL}/interviewer/${interviewerId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Fetch Error by Interviewer ID:", error);
+      throw error;
+    }
+  },
+
+  deleteAvailability: async (id) => {
+    const token = localStorage.getItem("authToken");
+    try {
+      const response = await axios.delete(`${API_BASE_URL}/delete/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      const message = error.response?.data || "Delete failed";
+      throw new Error(message);
+    }
+  },
 };
 
 export default AvailabilityService;
