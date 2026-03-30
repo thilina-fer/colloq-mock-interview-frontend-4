@@ -104,29 +104,44 @@ const Register = () => {
   const handleInterviewerComplete = async (interviewerExtraData, imageFile) => {
     setIsSubmitting(true);
     try {
+      // 1. මුලින්ම Auth Record එක හදනවා
       await AuthService.register({ ...formData, role: "INTERVIEWER" });
+
+      // 2. Login වෙලා Auth Token එක ලබාගන්නවා
       await AuthService.login({
         username: formData.username,
         password: formData.password,
       });
+
+      // Token එක system එකට load වෙනකම් පොඩි delay එකක් (Optional but safe)
       await new Promise((r) => setTimeout(r, 1000));
+
+      // 🎯 3. Backend DTO එකට 100% ගැලපෙන විදිහට Payload එක හදනවා
       const payload = {
         bio: interviewerExtraData.bio,
         company: interviewerExtraData.company,
-        designation: interviewerExtraData.designation,
-        experienceYears: Number(interviewerExtraData.experience),
-        specialization: interviewerExtraData.specializations.join(", "),
-        githubUrl: interviewerExtraData.github,
-        linkedinUrl: interviewerExtraData.linkedin,
-        status: "PENDING",
+        levelId: parseInt(interviewerExtraData.levelId), // DTO: Long levelId
+        experienceYears: parseInt(interviewerExtraData.experienceYears), // DTO: Integer experienceYears
+        githubUrl: interviewerExtraData.githubUrl,       // DTO: String githubUrl
+        linkedinUrl: interviewerExtraData.linkedinUrl,   // DTO: String linkedinUrl
+        specializations: interviewerExtraData.specializations, // DTO: List<String>
+        status: "PENDING", // Register වෙද්දී default PENDING
       };
+
+      console.log("🚀 Final Payload from Register.jsx:", payload);
+
+      // 4. Profile එක complete කරනවා (Multipart request)
       await InterviewerService.completeProfile(payload, imageFile);
+
       setIsInterviewerModalOpen(false);
       toast.success("Profile submitted for verification!");
+      
+      // Interviewer ට Dashboard එකට යන්න පුළුවන් (හැබැයි Approve වෙනකම් Pending screen එක පේයි)
       navigate("/dashboard/interviewer");
     } catch (error) {
+      console.error("Registration Error:", error);
       toast.error(
-        error.response?.data?.data || "Interviewer registration failed",
+        error.response?.data?.message || "Interviewer registration failed"
       );
     } finally {
       setIsSubmitting(false);

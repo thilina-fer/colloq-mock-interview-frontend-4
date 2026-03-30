@@ -1,4 +1,3 @@
-// src/component/dashboard/interviewer/InterviewerEditModal.jsx
 import React, { useState, useEffect, useRef } from "react";
 import CloseIcon from "@mui/icons-material/Close";
 import GitHubIcon from "@mui/icons-material/GitHub";
@@ -25,8 +24,15 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
     "CYBER SECURITY",
   ];
 
-  // userData එකෙන් එන data keys Backend එකට ගැලපෙන්න මුලින්ම set කරගමු
-  const [editFormData, setEditFormData] = useState({});
+  const [editFormData, setEditFormData] = useState({
+    username: "",
+    bio: "",
+    company: "",
+    experienceYears: 0,
+    githubUrl: "",
+    linkedinUrl: "",
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
@@ -36,14 +42,14 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
 
   useEffect(() => {
     if (isOpen && userData) {
+      // 🎯 Backend DTO fields වලටම ගැලපෙන්න data set කරනවා
       setEditFormData({
         username: userData.username || "",
         bio: userData.bio || "",
         company: userData.company || "",
-        designation: userData.designation || "",
         experienceYears: userData.experienceYears || 0,
-        github: userData.githubUrl || "", // mapping githubUrl to github
-        linkedin: userData.linkedinUrl || "", // mapping linkedinUrl to linkedin
+        githubUrl: userData.githubUrl || "",
+        linkedinUrl: userData.linkedinUrl || "",
       });
       setImagePreview(userData.profilePic);
       setSelectedImageFile(null);
@@ -61,7 +67,8 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
   if (!isOpen) return null;
 
   const handleEditChange = (e) => {
-    setEditFormData({ ...editFormData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setEditFormData({ ...editFormData, [name]: value });
   };
 
   const toggleSpecialization = (spec) => {
@@ -77,10 +84,6 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error("Image must be less than 5MB");
-        return;
-      }
       setSelectedImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => setImagePreview(reader.result);
@@ -91,16 +94,8 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
 
-    // Debugging: මොකක්ද වෙන්නේ කියලා බලන්න මේක පාවිච්චි කරන්න
-    console.log("Current Form Data:", editFormData);
-
     if (!editFormData.username?.trim() || !editFormData.bio?.trim()) {
       toast.error("Username and Bio are required!");
-      return;
-    }
-
-    if (selectedSpecializations.length === 0) {
-      toast.error("Please select at least one Specialization!");
       return;
     }
 
@@ -109,16 +104,15 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
     try {
       const isUsernameChanged = editFormData.username !== userData.username;
 
-      // Backend DTO එක බලාපොරොත්තු වන නිවැරදි Payload එක
+      // 🎯 Backend DTO එකට යන Final Payload එක
       const profilePayload = {
         username: editFormData.username,
         bio: editFormData.bio,
         company: editFormData.company,
-        designation: editFormData.designation,
-        experienceYears: Number(editFormData.experienceYears) || 0,
-        specialization: selectedSpecializations.join(", "),
-        githubUrl: editFormData.github,
-        linkedinUrl: editFormData.linkedin,
+        experienceYears: parseInt(editFormData.experienceYears) || 0,
+        specializations: selectedSpecializations, // List<String> ලෙස යවන්න
+        githubUrl: editFormData.githubUrl,
+        linkedinUrl: editFormData.linkedinUrl,
         status: userData.status || "PENDING",
       };
 
@@ -126,7 +120,7 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
       onClose();
     } catch (error) {
       console.error("Update Error:", error);
-      toast.error("An error occurred while saving profile.");
+      toast.error("Error saving profile changes.");
     } finally {
       setIsSubmitting(false);
     }
@@ -134,10 +128,7 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-sm bg-black/80">
-      <div
-        className="w-full max-w-4xl border rounded-sm p-10 shadow-2xl relative"
-        style={{ backgroundColor: colors.surface, borderColor: colors.border }}
-      >
+      <div className="w-full max-w-4xl border rounded-sm p-10 shadow-2xl relative bg-[#111111] border-[#333]">
         <button
           onClick={onClose}
           disabled={isSubmitting}
@@ -154,32 +145,24 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
 
         <form onSubmit={handleSaveProfile} className="space-y-8">
           <div className="flex flex-col md:flex-row gap-8 items-start">
-            {/* Left Column */}
+            {/* Image & Specialization Section */}
             <div className="w-full md:w-1/3 flex flex-col items-center border-r border-[#222] pr-0 md:pr-8">
               <div
-                className="relative group cursor-pointer w-28 h-28 active:scale-95 transition-transform mb-8"
+                className="relative group cursor-pointer w-28 h-28 mb-8"
                 onClick={() => !isSubmitting && fileInputRef.current.click()}
               >
-                <div
-                  className="w-full h-full border-2 rounded-full flex items-center justify-center overflow-hidden"
-                  style={{
-                    borderColor: colors.primary,
-                    backgroundColor: colors.background,
-                  }}
-                >
+                <div className="w-full h-full border-2 rounded-full flex items-center justify-center overflow-hidden border-orange-500 bg-[#0a0a0a]">
                   <img
                     src={
                       imagePreview ||
                       `https://ui-avatars.com/api/?name=${editFormData.username}&background=random`
                     }
                     alt="Preview"
-                    className="w-full h-full object-cover transition-opacity"
+                    className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="absolute inset-0 bg-black/70 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                  <PhotoCameraIcon
-                    sx={{ color: colors.primary, fontSize: 24 }}
-                  />
+                  <PhotoCameraIcon sx={{ color: "#ea580c", fontSize: 24 }} />
                 </div>
                 <input
                   type="file"
@@ -192,42 +175,33 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
 
               <div className="w-full">
                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-                  <VerifiedIcon sx={{ fontSize: 14, color: colors.primary }} />{" "}
-                  SPECIALIZATIONS *
+                  SPECIALIZATIONS
                 </label>
                 <div className="flex flex-wrap gap-2">
-                  {specializationOptions.map((spec) => {
-                    const isSelected = selectedSpecializations.includes(spec);
-                    return (
-                      <button
-                        key={spec}
-                        type="button"
-                        onClick={() => toggleSpecialization(spec)}
-                        style={{
-                          borderColor: isSelected
-                            ? colors.primary
-                            : colors.border,
-                          color: isSelected ? "#000" : colors.textMuted,
-                          backgroundColor: isSelected
-                            ? colors.primary
-                            : "transparent",
-                        }}
-                        className="px-3 py-1.5 border rounded-sm text-[9px] font-black uppercase tracking-widest transition-all"
-                      >
-                        {spec}
-                      </button>
-                    );
-                  })}
+                  {specializationOptions.map((spec) => (
+                    <button
+                      key={spec}
+                      type="button"
+                      onClick={() => toggleSpecialization(spec)}
+                      className={`px-3 py-1.5 border rounded-sm text-[9px] font-black uppercase tracking-widest transition-all ${
+                        selectedSpecializations.includes(spec)
+                          ? "bg-orange-600 border-orange-600 text-white"
+                          : "border-[#333] text-gray-500"
+                      }`}
+                    >
+                      {spec}
+                    </button>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Right Column */}
+            {/* Input Fields Section */}
             <div className="w-full md:w-2/3 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                    Username *
+                    Username
                   </label>
                   <div className="relative flex items-center">
                     <PersonOutlineIcon
@@ -237,8 +211,7 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
                     <input
                       type="text"
                       name="username"
-                      required
-                      value={editFormData.username || ""}
+                      value={editFormData.username}
                       onChange={handleEditChange}
                       className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-xs focus:border-orange-500 outline-none"
                     />
@@ -256,12 +229,15 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
                     <input
                       type="number"
                       name="experienceYears"
-                      value={editFormData.experienceYears || ""}
+                      value={editFormData.experienceYears}
                       onChange={handleEditChange}
                       className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-xs focus:border-orange-500 outline-none"
                     />
                   </div>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
                     Company
@@ -274,41 +250,24 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
                     <input
                       type="text"
                       name="company"
-                      value={editFormData.company || ""}
+                      value={editFormData.company}
                       onChange={handleEditChange}
                       className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-xs focus:border-orange-500 outline-none"
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                    Designation
-                  </label>
-                  <div className="relative flex items-center">
-                    <VerifiedIcon
-                      className="absolute left-3 text-gray-500"
-                      sx={{ fontSize: 18 }}
-                    />
-                    <input
-                      type="text"
-                      name="designation"
-                      value={editFormData.designation || ""}
-                      onChange={handleEditChange}
-                      className="w-full pl-10 pr-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-xs focus:border-orange-500 outline-none"
-                    />
-                  </div>
-                </div>
+                {/* 🎯 Note: Designation එක අයින් කළා DTO එකේ නැති නිසා. ඕනෙනම් මෙතනට Level dropdown එකක් දාන්න පුළුවන් */}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                    <GitHubIcon sx={{ fontSize: 14 }} /> GitHub
+                    <GitHubIcon sx={{ fontSize: 14 }} /> GitHub URL
                   </label>
                   <input
                     type="text"
-                    name="github"
-                    value={editFormData.github || ""}
+                    name="githubUrl"
+                    value={editFormData.githubUrl}
                     onChange={handleEditChange}
                     className="w-full px-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-xs focus:border-orange-500 outline-none"
                   />
@@ -316,12 +275,12 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
                 <div>
                   <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                     <LinkedInIcon sx={{ fontSize: 14, color: "#0077b5" }} />{" "}
-                    LinkedIn
+                    LinkedIn URL
                   </label>
                   <input
                     type="text"
-                    name="linkedin"
-                    value={editFormData.linkedin || ""}
+                    name="linkedinUrl"
+                    value={editFormData.linkedinUrl}
                     onChange={handleEditChange}
                     className="w-full px-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-xs focus:border-orange-500 outline-none"
                   />
@@ -330,15 +289,13 @@ const InterviewerEditModal = ({ isOpen, onClose, userData, onSave }) => {
 
               <div>
                 <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                  <FormatQuoteIcon
-                    sx={{ fontSize: 14, color: colors.primary }}
-                  />{" "}
-                  BIO *
+                  <FormatQuoteIcon sx={{ fontSize: 14, color: "#ea580c" }} />{" "}
+                  BIO
                 </label>
                 <textarea
                   name="bio"
                   required
-                  value={editFormData.bio || ""}
+                  value={editFormData.bio}
                   onChange={handleEditChange}
                   rows="4"
                   className="w-full px-4 py-3 rounded-sm border border-[#333] bg-[#0a0a0a] text-gray-100 text-xs focus:border-orange-500 outline-none resize-none"
