@@ -1,7 +1,7 @@
 import axios from "axios";
 
 // 💡 Backend එකේ Base URL එක
-const API_BASE_URL = "http://localhost:8080/api/v1/level";
+const API_BASE_URL = "http://localhost:8080/api/v1/levels";
 
 // 1. Axios Instance එකක් හදාගමු (Token එක auto attach වෙන්න)
 const apiClient = axios.create({
@@ -28,7 +28,7 @@ export const LevelService = {
   // 🚀 සියලුම ලෙවල් ලබා ගැනීම (Get All)
   getAllLevels: async () => {
     try {
-      const response = await apiClient.get("");
+      const response = await apiClient.get("/all");
       return response; // Meken return wenne APIResponse eka
     } catch (error) {
       throw error.response ? error.response.data : new Error("Network Error");
@@ -55,15 +55,16 @@ export const LevelService = {
     }
   },
 
-  // 🚀 ලෙවල් එකක් Update කිරීම (Update)
-  updateLevel: async (id, levelDTO) => {
+  // 🚀 ලෙවල් එකක් Update කිරීම (Update)// LevelService.js ඇතුළත
+updateLevel: async (id, levelDTO) => {
     try {
-      const response = await apiClient.put(`/${id}`, levelDTO);
-      return response;
+        // 💡 id එක පස්සේ අනවශ්‍ය colon (:) එකක් එකතු වෙලාද බලන්න
+        const response = await apiClient.put(`/${id}`, levelDTO); 
+        return response;
     } catch (error) {
-      throw error.response ? error.response.data : new Error("Network Error");
+        throw error;
     }
-  },
+},
 
   // 🚀 ලෙවල් එකක් මකා දැමීම (Delete)
   deleteLevel: async (id) => {

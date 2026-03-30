@@ -14,8 +14,8 @@ const LevelManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // 💡 Selector එකට අවශ්‍ය options
   const levelOptions = ["INTERN", "ASSOCIATE", "SENIOR", "EXPERT", "LEAD"];
 
   const [formData, setFormData] = useState({
@@ -26,11 +26,14 @@ const LevelManagement = () => {
   });
 
   const fetchLevels = async () => {
+    setIsLoading(true);
     try {
       const response = await LevelService.getAllLevels();
       setLevels(response.data.data || []);
     } catch (error) {
       toast.error("Failed to fetch levels");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -43,37 +46,44 @@ const LevelManagement = () => {
     const loadingToast = toast.loading(editMode ? "Updating..." : "Saving...");
 
     try {
+      // 💡 දත්ත නිවැරදි Type එකට හරවන්න (String -> Number)
       const payload = {
-        ...formData,
-        sessionDuration: parseInt(formData.sessionDuration),
-        price: parseFloat(formData.price),
+        name: formData.name,
+        sessionDuration: Number(formData.sessionDuration), // අනිවාර්යයෙන්ම Number විය යුතුයි
+        price: Number(formData.price), // අනිවාර්යයෙන්ම Number විය යුතුයි
+        status: formData.status || "ACTIVE",
       };
+
+      // 🔍 මේ Log එක Console එකේ බලන්න දත්ත ටික හරියට තියෙනවද කියලා
+      console.log("Sending Payload:", payload);
+      console.log("Target ID:", selectedId);
 
       if (editMode) {
         await LevelService.updateLevel(selectedId, payload);
-        toast.success("Level updated!", { id: loadingToast });
+        toast.success("Level updated successfully!", { id: loadingToast });
       } else {
         await LevelService.saveLevel(payload);
-        toast.success("Level created!", { id: loadingToast });
+        toast.success("Level created successfully!", { id: loadingToast });
       }
 
       resetForm();
       fetchLevels();
     } catch (error) {
+      console.error("Update Error Details:", error.response?.data); // 💡 Backend එකෙන් එවන ඇත්තම Error එක මෙතන පේනවා
       toast.error(error.response?.data?.message || "Operation failed", {
         id: loadingToast,
       });
     }
   };
-
   const handleEditClick = (level) => {
+    console.log("Selected ID for Edit:", level.levelId);
     setEditMode(true);
     setSelectedId(level.levelId);
     setFormData({
-      name: level.name,
-      sessionDuration: level.sessionDuration,
-      price: level.price,
-      status: level.status,
+      name: level.name || "",
+      sessionDuration: level.sessionDuration || "",
+      price: level.price || "",
+      status: level.status || "ACTIVE",
     });
     setIsModalOpen(true);
   };
@@ -99,7 +109,6 @@ const LevelManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header Section */}
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-black text-white uppercase tracking-widest">
           Session <span className="text-orange-500">Tiers</span>
@@ -115,7 +124,6 @@ const LevelManagement = () => {
         </button>
       </div>
 
-      {/* Levels Table */}
       <div
         className="border rounded-2xl overflow-hidden"
         style={{ backgroundColor: colors.surface, borderColor: colors.border }}
@@ -138,20 +146,22 @@ const LevelManagement = () => {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {levels.length > 0 ? (
+            {!isLoading && levels.length > 0 ? (
               levels.map((level) => (
                 <tr
                   key={level.levelId}
                   className="hover:bg-white/[0.01] transition-all"
                 >
                   <td className="p-4 text-xs font-black text-white uppercase tracking-wider">
-                    {level.name}
+                    {level.name || "N/A"}
                   </td>
                   <td className="p-4 text-center text-xs text-gray-400 font-bold">
-                    {level.sessionDuration} min
+                    {/* 💡 Null Check: අගය null නම් 0 පෙන්වයි */}
+                    {level.sessionDuration || 0} min
                   </td>
                   <td className="p-4 text-center text-xs text-orange-500 font-black">
-                    Rs. {level.price.toLocaleString()}
+                    {/* 💡 Crash Fix: අගය null නම් 0.toLocaleString() ලෙස පෙන්වයි */}
+                    Rs. {(level.price || 0).toLocaleString()}
                   </td>
                   <td className="p-4 text-right flex justify-end gap-2">
                     <button
@@ -175,7 +185,7 @@ const LevelManagement = () => {
                   colSpan="4"
                   className="p-10 text-center text-[10px] font-black uppercase text-gray-600 tracking-widest italic"
                 >
-                  No tiers defined yet
+                  {isLoading ? "Loading Tiers..." : "No tiers defined yet"}
                 </td>
               </tr>
             )}
@@ -183,7 +193,7 @@ const LevelManagement = () => {
         </table>
       </div>
 
-      {/* Add/Edit Modal */}
+      {/* MODAL SECTION - NO CHANGES NEEDED HERE BUT INCLUDED FOR COMPLETENESS */}
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
           <div
@@ -202,7 +212,6 @@ const LevelManagement = () => {
             </h3>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-              {/* 💡 LEVEL SELECTOR */}
               <div className="space-y-2">
                 <label className="text-[9px] font-black uppercase tracking-widest text-gray-500 ml-1">
                   Select Tier Level
