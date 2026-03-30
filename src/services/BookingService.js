@@ -1,42 +1,94 @@
 import axios from "axios";
 
-// 🎯 Base URL එක ඔයාගේ Backend Controller එකට ගැලපෙන්න හදන්න
-const API_URL = "http://localhost:8080/api/v1/booking";
+// 🎯 Backend එකේ @RequestMapping("/api/v1/bookings") වලට ගැලපෙන්න
+const API_URL = "http://localhost:8080/api/v1/bookings";
 
-export const BookingService = {
+const BookingService = {
   // 🚀 Booking එකක් Save කිරීම (Hire Interviewer)
   saveBooking: async (bookingData) => {
-    // 🎯 [IMPORTANT] ඔයා මුලින් පාවිච්චි කළේ "authToken" නේද? ඒ නමම මෙතනත් පාවිච්චි කරන්න.
     const token = localStorage.getItem("authToken");
+    try {
+      const response = await axios.post(`${API_URL}/hire`, bookingData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
 
-    const response = await axios.post(`${API_URL}/save`, bookingData, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
+  // ✅ Interviewer විසින් Booking එක Approve කිරීම
+  approveBooking: async (bookingId) => {
+    const token = localStorage.getItem("authToken");
+    try {
+      const response = await axios.put(
+        `${API_URL}/approve/${bookingId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // ❌ Interviewer විසින් Booking එක Reject කිරීම
+  rejectBooking: async (bookingId) => {
+    const token = localStorage.getItem("authToken");
+    try {
+      const response = await axios.put(
+        `${API_URL}/reject/${bookingId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // 📊 Interviewer ට ලැබුණු Pending Requests බැලීමට
+  getInterviewerBookings: async (interviewerId) => {
+    const token = localStorage.getItem("authToken");
+    try {
+      const response = await axios.get(
+        `${API_URL}/interviewer/${interviewerId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+
+      // 🎯 Backend එකෙන් Array එකක් නම් එන්නේ response.data,
+      // නැත්නම් response.data.data වෙන්න පුළුවන්. ඒක මෙතනදීම check කරමු.
+      return Array.isArray(response.data)
+        ? response.data
+        : response.data.data || [];
+    } catch (error) {
+      console.error("Fetch Error Interviewer Bookings:", error);
+      throw error;
+    }
   },
 
   // 📋 Candidate ගේ Booking History එක ලබා ගැනීම
-  getCandidateBookings: async () => {
+  getCandidateBookings: async (candidateId) => {
     const token = localStorage.getItem("authToken");
-    // සාමාන්‍යයෙන් candidateId එක Backend එකේදී Token එකෙන් ගන්න නිසා,
-    // endpoint එක /my-bookings වගේ එකක් වෙන්න පුළුවන්.
-    const response = await axios.get(`${API_URL}/my-bookings`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  },
-
-  // ✅ Interviewer විසින් Booking එක Approve/Reject කිරීම
-  updateBookingStatus: async (bookingId, status) => {
-    const token = localStorage.getItem("authToken");
-    const response = await axios.put(
-      `${API_URL}/update-status/${bookingId}?status=${status}`,
-      {},
-      {
+    try {
+      const response = await axios.get(`${API_URL}/candidate/${candidateId}`, {
         headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    return response.data;
+      });
+
+      // 🎯 මෙතනත් Array එක return කරනවා safety එකට
+      return Array.isArray(response.data)
+        ? response.data
+        : response.data.data || [];
+    } catch (error) {
+      console.error("Fetch Error Candidate Bookings:", error);
+      throw error;
+    }
   },
 };
 

@@ -3,19 +3,15 @@ import axios from "axios";
 const API_BASE_URL = "http://localhost:8080/api/v1/availability";
 
 const AvailabilityService = {
+  // 🚀 Batch Save slots (Interviewer Dashboard එකට)
   saveBatch: async (slotsArray) => {
     const token = localStorage.getItem("authToken");
-
-    console.log("Sending Token:", token);
-
     try {
       const response = await axios.post(
         `${API_BASE_URL}/batch-save`,
         slotsArray,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         },
       );
       return response.data;
@@ -24,6 +20,7 @@ const AvailabilityService = {
     }
   },
 
+  // 📋 ඔක්කොම slots ගන්න (අවශ්‍ය නම් පමණි)
   getAllAvailabilities: async () => {
     const token = localStorage.getItem("authToken");
     try {
@@ -37,7 +34,7 @@ const AvailabilityService = {
     }
   },
 
-  // 🎯 🚀 අලුතින්ම එකතු කළ කොටස: Interviewer අනුව Slots Fetch කිරීම
+  // 🎯 🚀 Candidate Modal එකට Interviewer අනුව Slots Fetch කිරීම
   getAvailabilitiesByInterviewerId: async (interviewerId) => {
     const token = localStorage.getItem("authToken");
     try {
@@ -47,6 +44,10 @@ const AvailabilityService = {
           headers: { Authorization: `Bearer ${token}` },
         },
       );
+
+      // 🎯 Backend එකෙන් කෙලින්ම Array එකක් එන නිසා response.data එක return කරනවා.
+      // හැබැයි ඔයා APIResponse class එක පාවිච්චි කරනවා නම් response.data.data වෙන්න ඕනේ.
+      // දැනට Postman එකේ පෙනුණු විදිහට මේක Array එකක්:
       return response.data;
     } catch (error) {
       console.error("Fetch Error by Interviewer ID:", error);
@@ -54,6 +55,7 @@ const AvailabilityService = {
     }
   },
 
+  // 🗑️ Slot එකක් Delete කිරීම
   deleteAvailability: async (id) => {
     const token = localStorage.getItem("authToken");
     try {
