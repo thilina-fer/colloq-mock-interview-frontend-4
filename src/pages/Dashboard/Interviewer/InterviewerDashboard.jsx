@@ -5,13 +5,11 @@ import Header from "../../../component/dashboard/candidate/Header";
 import Footer from "../../../component/dashboard/candidate/Footer";
 import InterviewerSidebar from "../../../component/dashboard/interviewer/InterviewerSidebar";
 import InterviewerWallet from "../../../component/dashboard/interviewer/InterviewerWallet";
-import InterviewerAvailability from "../../../component/dashboard/interviewer/InterviewerAvailability"; // 💡 Import කළා
+import InterviewerAvailability from "../../../component/dashboard/interviewer/InterviewerAvailability";
 import InterviewerEditModal from "../../../component/dashboard/interviewer/InterviewerEditModal";
+import InterviewerRequests from "../../../component/dashboard/interviewer/InterviewerRequests";
 
 // Icons
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
-import PersonSearchIcon from "@mui/icons-material/PersonSearch";
-import EngineeringIcon from "@mui/icons-material/Engineering";
 import CircularProgress from "@mui/material/CircularProgress";
 import LockClockIcon from "@mui/icons-material/LockClock";
 
@@ -22,7 +20,6 @@ import toast from "react-hot-toast";
 
 const InterviewerDashboard = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("pending");
   const [mode, setMode] = useState("interviewer");
   const [currentView, setCurrentView] = useState("dashboard");
 
@@ -34,29 +31,11 @@ const InterviewerDashboard = () => {
   const fetchProfile = async () => {
     try {
       const data = await AuthService.getCurrentUser();
-      console.log("CHECKING STATUS:", data?.status);
-
-      if (!userData) {
-        setUserData(data);
-      }
-
-      if (
-        userData?.status?.toUpperCase() === "PENDING" &&
-        data?.status?.toUpperCase() === "ACTIVE"
-      ) {
-        toast.success("Account Approved! Logging out...", { duration: 4000 });
-        setTimeout(() => {
-          localStorage.removeItem("authToken");
-          window.location.href = "/login";
-        }, 3000);
-        return;
-      }
+      setUserData(data);
 
       if (data?.status?.toUpperCase() === "PENDING") {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(fetchProfile, 60000);
-      } else {
-        setUserData(data);
       }
     } catch (error) {
       console.error("Fetch Error:", error);
@@ -69,7 +48,7 @@ const InterviewerDashboard = () => {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [userData?.status]);
+  }, []);
 
   const handleProfileSave = async (
     profilePayload,
@@ -80,31 +59,22 @@ const InterviewerDashboard = () => {
     try {
       await InterviewerService.updateProfile(profilePayload, imageFile);
       toast.success("Profile updated successfully!", { id: loadingToast });
-
       if (isUsernameChanged) {
-        toast("Username changed! Please log in again.", { icon: "⚠️" });
-        setTimeout(() => {
-          AuthService.logout();
-        }, 2000);
+        AuthService.logout();
       } else {
         await fetchProfile();
         setIsEditModalOpen(false);
       }
     } catch (error) {
-      console.error("Dashboard Update Error:", error);
-      const errorMsg =
-        error.response?.data?.message || error.message || "Update failed";
-      toast.error(errorMsg, { id: loadingToast });
+      toast.error("Update failed", { id: loadingToast });
     }
   };
 
   if (!userData)
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white font-black tracking-widest text-[10px] uppercase">
-        <div className="flex flex-col items-center gap-4">
-          <CircularProgress size={20} sx={{ color: colors.primary }} />
-          Loading Profile...
-        </div>
+        <CircularProgress size={20} sx={{ color: colors.primary, mr: 2 }} />
+        Loading Profile...
       </div>
     );
 
@@ -115,45 +85,21 @@ const InterviewerDashboard = () => {
         style={{ backgroundColor: colors.background }}
       >
         <Header />
-        <main className="flex-grow flex items-center justify-center p-6 relative overflow-hidden">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-orange-600/5 blur-[120px] rounded-full"></div>
-          <div
-            className="max-w-lg w-full p-12 border-2 border-dashed rounded-2xl text-center space-y-8 relative z-10 animate-in zoom-in duration-500"
-            style={{
-              borderColor: "rgba(255,102,0,0.2)",
-              backgroundColor: "rgba(10,10,10,0.8)",
-              backdropFilter: "blur(10px)",
-            }}
-          >
-            <div className="relative flex justify-center">
-              <div className="absolute inset-0 animate-ping rounded-full bg-orange-500/10 blur-xl"></div>
-              <div className="relative w-20 h-20 bg-orange-600/10 rounded-full flex items-center justify-center border border-orange-500/20">
-                <LockClockIcon sx={{ fontSize: 35, color: colors.primary }} />
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h2 className="text-2xl font-black uppercase tracking-[0.2em] text-white">
-                Account <span className="text-orange-500">Pending</span>
-              </h2>
-              <div className="h-1 w-20 bg-orange-500 mx-auto rounded-full"></div>
-              <p className="text-[11px] font-bold text-gray-400 uppercase tracking-[0.2em] leading-relaxed">
-                Your profile is currently under review. <br />
-                <span className="text-orange-500 font-black">
-                  Once approved, you will be logged out to refresh your session.
-                </span>
-              </p>
-            </div>
-            <div className="pt-6 border-t border-white/5 flex flex-col gap-4">
-              <p className="text-[9px] font-medium text-gray-600 uppercase tracking-widest text-orange-400 animate-pulse">
-                System is checking for approval status...
-              </p>
-              <button
-                onClick={() => AuthService.logout()}
-                className="w-full py-4 bg-white/5 border border-white/5 text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 hover:text-white hover:bg-red-600/10 hover:border-red-600/20 transition-all rounded-sm"
-              >
-                Sign Out from System
-              </button>
-            </div>
+        <main className="flex-grow flex items-center justify-center p-6">
+          <div className="max-w-lg w-full p-12 border-2 border-dashed border-orange-500/20 bg-black/80 backdrop-blur-md rounded-2xl text-center space-y-8 animate-in zoom-in">
+            <LockClockIcon sx={{ fontSize: 40, color: colors.primary }} />
+            <h2 className="text-2xl font-black uppercase text-white">
+              Account <span className="text-orange-500">Pending</span>
+            </h2>
+            <p className="text-[11px] text-gray-400 uppercase tracking-widest">
+              Your profile is currently under review.
+            </p>
+            <button
+              onClick={() => AuthService.logout()}
+              className="w-full py-4 bg-white/5 border border-white/5 text-[10px] text-white uppercase tracking-widest hover:bg-red-600/10 transition-all"
+            >
+              Sign Out
+            </button>
           </div>
         </main>
         <Footer />
@@ -163,12 +109,15 @@ const InterviewerDashboard = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col font-sans"
+      className="min-h-screen flex flex-col font-sans select-none"
       style={{ backgroundColor: colors.background }}
     >
       <Header />
-      <main className="flex-grow w-full max-w-[1400px] mx-auto p-6 flex flex-col lg:flex-row gap-6">
-        <div className="w-full lg:w-1/4">
+
+      {/* 🛠️ Main Layout Fixed: Sidebar vs Content */}
+      <main className="flex-grow w-full max-w-[1400px] mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
+        {/* LEFT: SIDEBAR */}
+        <div className="w-full lg:w-[320px] flex-shrink-0">
           <InterviewerSidebar
             setCurrentView={setCurrentView}
             currentView={currentView}
@@ -177,74 +126,41 @@ const InterviewerDashboard = () => {
           />
         </div>
 
-        <div className="w-full lg:w-3/4 flex flex-col gap-6">
-          {/* 💡 Switch logic for views */}
+        {/* RIGHT: CONTENT AREA */}
+        <div className="flex-grow flex flex-col min-w-0">
           {currentView === "wallet" ? (
             <InterviewerWallet />
           ) : currentView === "availability" ? (
-            <InterviewerAvailability /> // 💡 මෙතනින් Availability load වෙනවා
+            <InterviewerAvailability />
           ) : (
-            <>
-              {/* <div
-                className="w-full p-8 border rounded-sm shadow-xl space-y-8"
-                style={{
-                  backgroundColor: colors.surface,
-                  borderColor: colors.border,
-                }}
-              >
-                <div className="flex justify-between items-center">
-                  <h2
-                    className="text-sm font-black uppercase tracking-[0.3em]"
-                    style={{ color: colors.textMain }}
-                  >
-                    Practice <span className="text-orange-500">Mode</span>
+            <div className="flex flex-col gap-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+              {/* Requests Header */}
+              <div className="flex justify-between items-end border-b border-white/5 pb-6">
+                <div className="space-y-1">
+                  <h2 className="text-3xl font-black uppercase tracking-tighter text-white">
+                    Booking <span className="text-orange-500">Requests</span>
                   </h2>
-                  <div
-                    className="flex p-1 rounded-sm border"
-                    style={{
-                      borderColor: colors.border,
-                      backgroundColor: colors.background,
-                    }}
-                  >
-                    <button
-                      onClick={() => setMode("interviewer")}
-                      className={`px-6 py-2 rounded-sm text-[10px] font-black uppercase tracking-widest transition-all ${mode === "interviewer" ? "bg-white text-black" : "text-gray-500 hover:text-gray-300"}`}
-                    >
-                      <EngineeringIcon sx={{ fontSize: 16, mr: 1 }} />{" "}
-                      Interviewer
-                    </button>
-                    <button
-                      onClick={() => setMode("candidate")}
-                      className={`px-6 py-2 rounded-sm text-[10px] font-black uppercase tracking-widest transition-all ${mode === "candidate" ? "bg-orange-600 text-white" : "text-gray-500 hover:text-gray-300"}`}
-                    >
-                      <PersonSearchIcon sx={{ fontSize: 16, mr: 1 }} />{" "}
-                      Candidate
-                    </button>
-                  </div>
-                </div>
-                <div
-                  className="p-6 rounded-sm border border-dashed text-center"
-                  style={{
-                    borderColor: colors.border,
-                    backgroundColor: "rgba(255,255,255,0.02)",
-                  }}
-                >
-                  <p
-                    className="text-xs font-medium uppercase tracking-widest"
-                    style={{ color: colors.textMuted }}
-                  >
-                    Welcome back,{" "}
-                    <span style={{ color: colors.primary }}>
-                      {userData.username}
-                    </span>
-                    . You are in {mode.toUpperCase()} Mode.
+                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">
+                    Manage your incoming interview sessions
                   </p>
                 </div>
-              </div> */}
-            </>
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-[9px] font-black text-white uppercase tracking-widest">
+                    Live Updates
+                  </span>
+                </div>
+              </div>
+
+              {/* 🚀 Interviewer Requests Component - Manual ID pass for testing */}
+              <div className="w-full">
+                <InterviewerRequests interviewerId={1} />
+              </div>
+            </div>
           )}
         </div>
       </main>
+
       <Footer />
 
       <InterviewerEditModal
