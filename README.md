@@ -1,16 +1,31 @@
-# React + Vite
+# 🎨 ColloQ - Mock Interview Platform (Frontend)
+"Master the Interview. Land your Dream Job."
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, high-conversion landing page and dashboard system for the ColloQ platform. Built with a focus on **Dark Glassmorphism** UI and smooth user experience.
 
-Currently, two official plugins are available:
+## 🛠️ Tech Stack
+* **Library:** React.js
+* **Styling:** Tailwind CSS
+* **UI Components:** Material UI (MUI) & Framer Motion
+* **State Management:** React Hooks (useState, useEffect)
+* **Icons:** Bootstrap Icons & MUI Icons
+* **HTTP Client:** Axios
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## ✨ UI Features
+* **Glassmorphism Theme:** Deep black backgrounds with neon orange accents.
+* **Dynamic Dashboards:** Real-time wallet balance tracking and session management.
+* **Responsive Design:** Optimized for Desktop, Tablets (Samsung Tab S9), and Mobile.
+* **Smooth Animations:** Framer Motion for entrance transitions and hover effects.
 
-## React Compiler
+## 🚀 Installation
+1. `npm install` to install dependencies.
+2. `npm run dev` to start the development server.
+3. Access the platform at `http://localhost:5173`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
+## 📸 Project Showcase
+* **Landing Page:** Professional high-conversion hero section.
+* **Interviewer Dashboard:** Real-time wallet and availability management.
+* **Candidate Portal:** Easy mentor discovery and booking flow.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Built for Engineers. Engineered for Excellence. 🦾
