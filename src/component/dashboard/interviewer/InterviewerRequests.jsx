@@ -3,33 +3,29 @@ import BookingService from "../../../services/BookingService";
 import InterviewerRequestCard from "./InterviewerRequestCard";
 import toast from "react-hot-toast";
 
-const InterviewerRequests = ({ interviewerId }) => {
+const InterviewerRequests = () => {
+  // 🎯 [CHANGE] interviewerId parameter එක ඉවත් කළා (Token එකෙන් ගන්න නිසා)
   const [requests, setRequests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState(null);
 
-  // 🎯 Fetch logic එක useCallback එකක් ඇතුළට දැම්මා memory leaks වැළැක්වීමට
   const fetchRequests = useCallback(async () => {
-    if (!interviewerId) {
-      setIsLoading(false); // ID එක නැත්නම් loading නතර කරන්න
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const data = await BookingService.getInterviewerBookings(interviewerId);
+      // 🎯 [CHANGE] දැන් Parameter යවන්නේ නැතිව direct call කරනවා
+      const data = await BookingService.getInterviewerBookings();
       console.log("RAW DATA FROM BACKEND:", data);
-      // Backend එකෙන් එන්නේ array එකක්ද කියලා check කිරීම (Safety first)
+
       const requestsArray = Array.isArray(data) ? data : data?.data || [];
       setRequests(requestsArray);
     } catch (err) {
       console.error("Booking Fetch Error:", err);
       toast.error("Failed to load requests.");
-      setRequests([]); // Error එකකදී හිස් array එකක් සෙට් කරන්න
+      setRequests([]);
     } finally {
       setIsLoading(false);
     }
-  }, [interviewerId]);
+  }, []); // 🎯 [CHANGE] Dependency array එක හිස් කළා
 
   useEffect(() => {
     fetchRequests();
@@ -40,7 +36,6 @@ const InterviewerRequests = ({ interviewerId }) => {
     try {
       await BookingService.approveBooking(id);
       toast.success("Booking Approved!");
-      // 🚀 Optimize: මුළු ලිස්ට් එකම ආයේ fetch කරන්නේ නැතුව local state එකෙන් අයින් කරන්නත් පුළුවන්
       setRequests((prev) => prev.filter((req) => req.bookingId !== id));
     } catch (err) {
       toast.error("Approval failed.");
@@ -64,8 +59,6 @@ const InterviewerRequests = ({ interviewerId }) => {
       setActionLoadingId(null);
     }
   };
-
-  // --- UI RENDERING ---
 
   if (isLoading) {
     return (
@@ -93,7 +86,6 @@ const InterviewerRequests = ({ interviewerId }) => {
       ) : (
         <div className="col-span-full py-24 border border-dashed border-white/5 text-center rounded-sm bg-white/[0.01] flex flex-col items-center justify-center gap-4">
           <div className="opacity-20">
-            {/* මෙතනට ඔයාට කැමති icon එකක් දාන්න පුළුවන් */}
             <svg
               width="40"
               height="40"
