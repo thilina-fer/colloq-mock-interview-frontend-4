@@ -17,22 +17,28 @@ const BookingService = {
     }
   },
 
-  // ✅ Interviewer විසින් Booking එක Approve කිරීම
+  // BookingService.js ඇතුළත
+
   approveBooking: async (bookingId) => {
     const token = localStorage.getItem("authToken");
-    try {
-      const response = await axios.put(
-        `${API_URL}/approve/${bookingId}`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+
+    // 🎯 මෙතන URL එකට පස්සේ හිස් object එකක් {} දාන්න අමතක කරන්න එපා
+    return await axios.put(
+      `http://localhost:8080/api/v1/bookings/approve/${bookingId}`,
+      {}, // <--- මේ හිස් body එක අනිවාර්යයෙන්ම තියෙන්න ඕනේ
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
+
+
+  getApprovedBookings: async () => {
+    const token = localStorage.getItem("authToken");
+    return await axios.get(`${API_URL}/interviewer/approved`, {
+        headers: { Authorization: `Bearer ${token}` }
+    });
+},
 
   // ❌ Interviewer විසින් Booking එක Reject කිරීම
   rejectBooking: async (bookingId) => {
