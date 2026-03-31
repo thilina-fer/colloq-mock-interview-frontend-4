@@ -8,11 +8,13 @@ import InterviewerWallet from "../../../component/dashboard/interviewer/Intervie
 import InterviewerAvailability from "../../../component/dashboard/interviewer/InterviewerAvailability";
 import InterviewerEditModal from "../../../component/dashboard/interviewer/InterviewerEditModal";
 import InterviewerRequests from "../../../component/dashboard/interviewer/InterviewerRequests";
-import ApprovedRequests from "../../../component/dashboard/interviewer/ApprovedRequests"; // 🎯 අලුතින් add කළා
+import ApprovedRequests from "../../../component/dashboard/interviewer/ApprovedRequests";
 
 // Icons
 import CircularProgress from "@mui/material/CircularProgress";
 import LockClockIcon from "@mui/icons-material/LockClock";
+import AccountBalanceWalletIcon from "@mui/icons-material/AccountBalanceWallet";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 
 // Services
 import { AuthService } from "../../../services/AuthService";
@@ -22,7 +24,7 @@ import toast from "react-hot-toast";
 const InterviewerDashboard = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
-  const [currentView, setCurrentView] = useState("dashboard");
+  const [currentView, setCurrentView] = useState("dashboard"); // dashboard, wallet, availability
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const timeoutRef = useRef(null);
 
@@ -112,7 +114,7 @@ const InterviewerDashboard = () => {
       <Header />
 
       <main className="flex-grow w-full max-w-[1400px] mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
-        {/* LEFT: SIDEBAR */}
+        {/* LEFT: SIDEBAR (Candidate Dashboard එකේ වගේමයි) */}
         <div className="w-full lg:w-[320px] flex-shrink-0">
           <InterviewerSidebar
             setCurrentView={setCurrentView}
@@ -122,51 +124,93 @@ const InterviewerDashboard = () => {
           />
         </div>
 
-        {/* RIGHT: CONTENT AREA */}
+        {/* RIGHT: CONTENT AREA (Tabs හරහා මාරු වන ලෙස) */}
         <div className="flex-grow flex flex-col min-w-0">
-          {currentView === "wallet" ? (
-            <InterviewerWallet />
-          ) : currentView === "availability" ? (
-            <InterviewerAvailability />
-          ) : (
-            <div className="flex flex-col gap-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              {/* 🎯 SECTION 1: PENDING REQUESTS */}
-              <div className="space-y-6">
-                <div className="flex justify-between items-end border-b border-white/5 pb-6">
-                  <div className="space-y-1">
-                    <h2 className="text-3xl font-black uppercase tracking-tighter text-white">
-                      New <span className="text-orange-500">Requests</span>
-                    </h2>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">
-                      Incoming interview sessions awaiting your approval
-                    </p>
-                  </div>
-                  <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-full">
-                    <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-[9px] font-black text-white uppercase tracking-widest">
-                      Live Updates
-                    </span>
-                  </div>
+          {/* 🎯 TOP STATS SECTION (Wallet & Status) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
+            {/* Wallet Balance Card */}
+            <div className="bg-white/[0.02] border border-white/10 p-6 rounded-2xl backdrop-blur-md flex items-center justify-between group hover:border-orange-500/30 transition-all">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+                  Available Balance
+                </p>
+                <div className="flex items-baseline gap-2 mt-1">
+                  <h3 className="text-2xl font-black text-white">
+                    {userData.walletBalance?.toLocaleString() || "0.00"}
+                  </h3>
+                  <span className="text-[9px] font-black text-orange-500 uppercase">
+                    LKR
+                  </span>
                 </div>
-                <InterviewerRequests />
               </div>
-
-              {/* 🎯 SECTION 2: APPROVED & CONFIRMED (Payment & Meeting Link) */}
-              <div className="space-y-6">
-                <div className="flex justify-between items-end border-b border-white/5 pb-6">
-                  <div className="space-y-1">
-                    <h2 className="text-3xl font-black uppercase tracking-tighter text-white">
-                      Confirmed <span className="text-green-500">Sessions</span>
-                    </h2>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">
-                      Monitor payments and access meeting links
-                    </p>
-                  </div>
-                </div>
-                <ApprovedRequests />
+              <div className="p-3 bg-orange-500/10 rounded-xl text-orange-500">
+                <AccountBalanceWalletIcon />
               </div>
             </div>
-          )}
+
+            {/* Availability Status Card */}
+            <div className="bg-white/[0.02] border border-white/10 p-6 rounded-2xl backdrop-blur-md flex items-center justify-between group hover:border-green-500/30 transition-all">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+                  Profile Status
+                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <h3 className="text-sm font-black text-white uppercase tracking-widest">
+                    {userData.status || "ACTIVE"}
+                  </h3>
+                </div>
+              </div>
+              <div className="p-3 bg-green-500/10 rounded-xl text-green-500">
+                <EventAvailableIcon />
+              </div>
+            </div>
+          </div>
+
+          {/* 🎯 TAB CONTENT AREA */}
+          <div className="flex-grow">
+            {currentView === "wallet" ? (
+              <InterviewerWallet />
+            ) : currentView === "availability" ? (
+              <InterviewerAvailability />
+            ) : (
+              /* DEFAULT VIEW: SESSIONS & REQUESTS */
+              <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {/* View Tabs Selector (Candidate Dashboard එකේ වගේමයි) */}
+                <div className="flex gap-8 border-b border-white/5 mb-8">
+                  <button className="pb-4 text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 border-b-2 border-orange-500">
+                    Interview Sessions
+                  </button>
+                </div>
+
+                {/* SECTION 1: PENDING REQUESTS */}
+                <div className="space-y-6">
+                  <div className="flex flex-col space-y-1">
+                    <h2 className="text-xl font-black uppercase tracking-tight text-white">
+                      New <span className="text-orange-500">Requests</span>
+                    </h2>
+                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
+                      Incoming sessions awaiting your response
+                    </p>
+                  </div>
+                  <InterviewerRequests />
+                </div>
+
+                {/* SECTION 2: CONFIRMED SESSIONS */}
+                <div className="space-y-6">
+                  <div className="flex flex-col space-y-1 pt-6 border-t border-white/5">
+                    <h2 className="text-xl font-black uppercase tracking-tight text-white">
+                      Confirmed <span className="text-green-500">Sessions</span>
+                    </h2>
+                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
+                      Approved sessions with payment tracking
+                    </p>
+                  </div>
+                  <ApprovedRequests />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </main>
 
