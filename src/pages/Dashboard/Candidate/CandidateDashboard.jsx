@@ -4,19 +4,14 @@ import Header from "../../../component/dashboard/candidate/Header";
 import Footer from "../../../component/dashboard/candidate/Footer";
 import CandidateSidebar from "../../../component/dashboard/candidate/CandidateSidebar";
 import InterviewerSelectionModal from "../../../component/bookings/InterviewerSelectionModal";
-import PendingSessions from "../../../component/bookings/PendingSessions";
+import CandidateBookings from "../../../component/dashboard/candidate/CandidateBookings"; // 🎯 අලුතින් හදපු component එක import කළා
 
-// Material Icons for UI enhancement
+// Material Icons
 import HistoryIcon from "@mui/icons-material/History";
-import HourglassEmptyIcon from "@mui/icons-material/HourglassEmpty";
 
 const CandidateDashboard = () => {
   const [activeTab, setActiveTab] = useState("pending");
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
-
-  // 🎯 ලොග් වී සිටින User ගේ ID එක (මෙතනට ඔයාගේ Auth Context එකෙන් එන ID එක දෙන්න)
-  // දැනට මම static ID එකක් දානවා test කරන්න.
-  const currentUserId = 1;
 
   const handleInterviewerSelection = (interviewer) => {
     console.log("Selected Interviewer:", interviewer);
@@ -38,14 +33,14 @@ const CandidateDashboard = () => {
             setCurrentView={() => setIsBookingModalOpen(true)}
           />
 
-          {/* Quick Info Box (Optional UI addition) */}
+          {/* Quick Info Box */}
           <div className="border border-white/5 bg-white/[0.01] p-6 rounded-sm space-y-4">
             <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">
               Dashboard Tip
             </h5>
             <p className="text-[11px] text-gray-500 leading-relaxed italic">
-              "Check your pending sessions regularly. Experts usually respond
-              within 24 hours."
+              "Check your session status regularly. Once an expert approves, you
+              can proceed with the payment to confirm your slot."
             </p>
           </div>
         </div>
@@ -66,7 +61,7 @@ const CandidateDashboard = () => {
                   activeTab === "pending" ? colors.primary : colors.textMain,
               }}
             >
-              Pending Sessions
+              My Interview Sessions
               {activeTab === "pending" && (
                 <div className="absolute bottom-0 left-0 w-full h-[2px] bg-orange-500 shadow-[0_0_10px_rgba(234,88,12,0.5)]" />
               )}
@@ -84,7 +79,7 @@ const CandidateDashboard = () => {
                   activeTab === "completed" ? colors.primary : colors.textMain,
               }}
             >
-              Completed Sessions
+              Past History
               {activeTab === "completed" && (
                 <div className="absolute bottom-0 left-0 w-full h-[2px] bg-orange-500 shadow-[0_0_10px_rgba(234,88,12,0.5)]" />
               )}
@@ -94,12 +89,12 @@ const CandidateDashboard = () => {
           {/* DYNAMIC CONTENT DISPLAY */}
           <div className="flex-grow min-h-[500px]">
             {activeTab === "pending" ? (
-              /* 🚀 පෙන්ඩින් සෙෂන් කාඩ්ස් ටික මෙතනට ලෝඩ් වෙනවා */
+              /* 🚀 මෙතන තමයි ඔයාගේ අලුත් Card list එක ලෝඩ් වෙන්නේ */
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <PendingSessions currentUserId={currentUserId} />
+                <CandidateBookings />
               </div>
             ) : (
-              /* COMPLETED SESSIONS: Empty State Placeholder */
+              /* COMPLETED SESSIONS: Empty State */
               <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-white/5 bg-white/[0.01] rounded-sm py-20">
                 <div className="p-4 rounded-full bg-white/5 mb-4">
                   <HistoryIcon
