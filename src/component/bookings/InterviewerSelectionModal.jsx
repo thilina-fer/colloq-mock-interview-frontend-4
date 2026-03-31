@@ -63,10 +63,11 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
   const fetchAvailability = async (interviewerId) => {
     setIsSlotsLoading(true);
     try {
-      const res = await axios.get(
-        `http://localhost:8080/api/v1/availability/interviewer/${interviewerId}`,
-        { headers },
-      );
+      // 🎯 මේ ලොග් එක දාලා බලන්න URL එකේ අන්තිමට තියෙන්නේ මොන ID එකද කියලා
+      const fullUrl = `http://localhost:8080/api/v1/availability/interviewer/${interviewerId}`;
+      console.log("Requesting Availability from:", fullUrl);
+
+      const res = await axios.get(fullUrl, { headers });
       const data = Array.isArray(res.data) ? res.data : res.data.data;
       setAvailabilitySlots(data || []);
     } catch (err) {
@@ -77,6 +78,7 @@ const InterviewerSelectionModal = ({ isOpen, onClose }) => {
   };
 
   const handleInterviewerSelect = (interviewer) => {
+    console.log("Selected Interviewer Data:", interviewer);
     setSelectedInterviewer(interviewer);
     fetchAvailability(interviewer.interviewerId);
     setStep(2);
