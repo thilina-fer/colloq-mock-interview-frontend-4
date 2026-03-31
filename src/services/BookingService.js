@@ -51,24 +51,15 @@ const BookingService = {
     }
   },
 
-  // 📊 Interviewer ට ලැබුණු Pending Requests බැලීමට
-  getInterviewerBookings: async (interviewerId) => {
+  // BookingService.js ඇතුළත
+  getInterviewerBookings: async () => {
     const token = localStorage.getItem("authToken");
     try {
-      const response = await axios.get(
-        `${API_URL}/interviewer/${interviewerId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-
-      // 🎯 Backend එකෙන් Array එකක් නම් එන්නේ response.data,
-      // නැත්නම් response.data.data වෙන්න පුළුවන්. ඒක මෙතනදීම check කරමු.
-      return Array.isArray(response.data)
-        ? response.data
-        : response.data.data || [];
+      const response = await axios.get(`${API_URL}/interviewer/my-requests`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return response.data || [];
     } catch (error) {
-      console.error("Fetch Error Interviewer Bookings:", error);
       throw error;
     }
   },
