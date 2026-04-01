@@ -19,12 +19,14 @@ import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 // Services
 import { AuthService } from "../../../services/AuthService";
 import { InterviewerService } from "../../../services/InterviewerService";
+import { WalletService } from "../../../services/WalletService"; 
 import toast from "react-hot-toast";
 
 const InterviewerDashboard = () => {
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
-  const [currentView, setCurrentView] = useState("dashboard"); // dashboard, wallet, availability
+  const [walletData, setWalletData] = useState(null); 
+  const [currentView, setCurrentView] = useState("dashboard");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const timeoutRef = useRef(null);
 
@@ -32,6 +34,11 @@ const InterviewerDashboard = () => {
     try {
       const data = await AuthService.getCurrentUser();
       setUserData(data);
+
+      if (data) {
+        getWalletBalance();
+      }
+
       if (data?.status?.toUpperCase() === "PENDING") {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
         timeoutRef.current = setTimeout(fetchProfile, 60000);
@@ -39,6 +46,16 @@ const InterviewerDashboard = () => {
     } catch (error) {
       console.error("Fetch Error:", error);
       if (error.response?.status === 401) navigate("/login");
+    }
+  };
+
+  const getWalletBalance = async () => {
+    try {
+      const res = await WalletService.getMyWallet();
+      // 🎯 API එකෙන් APIResponse එකක් එන නිසා res.data set කරන්න
+      setWalletData(res.data);
+    } catch (error) {
+      console.error("Wallet Fetch Error:", error);
     }
   };
 
@@ -114,7 +131,6 @@ const InterviewerDashboard = () => {
       <Header />
 
       <main className="flex-grow w-full max-w-[1400px] mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
-        {/* LEFT: SIDEBAR (Candidate Dashboard එකේ වගේමයි) */}
         <div className="w-full lg:w-[320px] flex-shrink-0">
           <InterviewerSidebar
             setCurrentView={setCurrentView}
@@ -124,11 +140,8 @@ const InterviewerDashboard = () => {
           />
         </div>
 
-        {/* RIGHT: CONTENT AREA (Tabs හරහා මාරු වන ලෙස) */}
         <div className="flex-grow flex flex-col min-w-0">
-          {/* 🎯 TOP STATS SECTION (Wallet & Status) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-            {/* Wallet Balance Card */}
             <div className="bg-white/[0.02] border border-white/10 p-6 rounded-2xl backdrop-blur-md flex items-center justify-between group hover:border-orange-500/30 transition-all">
               <div>
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
@@ -136,7 +149,13 @@ const InterviewerDashboard = () => {
                 </p>
                 <div className="flex items-baseline gap-2 mt-1">
                   <h3 className="text-2xl font-black text-white">
-                    {userData.walletBalance?.toLocaleString() || "0.00"}
+                    {/* 🎯 Safe navigation used here to prevent crash */}
+                    {walletData?.balance != null
+                      ? walletData.balance.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })
+                      : "0.00"}
                   </h3>
                   <span className="text-[9px] font-black text-orange-500 uppercase">
                     LKR
@@ -148,7 +167,6 @@ const InterviewerDashboard = () => {
               </div>
             </div>
 
-            {/* Availability Status Card */}
             <div className="bg-white/[0.02] border border-white/10 p-6 rounded-2xl backdrop-blur-md flex items-center justify-between group hover:border-green-500/30 transition-all">
               <div>
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
@@ -167,23 +185,19 @@ const InterviewerDashboard = () => {
             </div>
           </div>
 
-          {/* 🎯 TAB CONTENT AREA */}
           <div className="flex-grow">
             {currentView === "wallet" ? (
               <InterviewerWallet />
             ) : currentView === "availability" ? (
               <InterviewerAvailability />
             ) : (
-              /* DEFAULT VIEW: SESSIONS & REQUESTS */
               <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* View Tabs Selector (Candidate Dashboard එකේ වගේමයි) */}
                 <div className="flex gap-8 border-b border-white/5 mb-8">
                   <button className="pb-4 text-[10px] font-black uppercase tracking-[0.2em] text-orange-500 border-b-2 border-orange-500">
                     Interview Sessions
                   </button>
                 </div>
 
-                {/* SECTION 1: PENDING REQUESTS */}
                 <div className="space-y-6">
                   <div className="flex flex-col space-y-1">
                     <h2 className="text-xl font-black uppercase tracking-tight text-white">
@@ -196,7 +210,6 @@ const InterviewerDashboard = () => {
                   <InterviewerRequests />
                 </div>
 
-                {/* SECTION 2: CONFIRMED SESSIONS */}
                 <div className="space-y-6">
                   <div className="flex flex-col space-y-1 pt-6 border-t border-white/5">
                     <h2 className="text-xl font-black uppercase tracking-tight text-white">
