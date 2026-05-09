@@ -12,9 +12,12 @@ import {
   MinusIcon,
   SparklesIcon,
   ArrowUpRightIcon,
+  Bars3Icon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
+import Logo from "../component/Logo";
 
-/* ─── tiny helpers ─── */
+/* ─── helpers ─── */
 const Tag = ({ children }) => (
   <span className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-orange-500/30 text-orange-400 bg-orange-500/5">
     {children}
@@ -23,16 +26,15 @@ const Tag = ({ children }) => (
 
 const StatPill = ({ value, label }) => (
   <div className="flex flex-col items-center gap-1">
-    <span className="text-3xl font-black tracking-tighter text-white">
+    <span className="text-2xl sm:text-3xl font-black tracking-tighter text-white">
       {value}
     </span>
-    <span className="text-[9px] font-black uppercase tracking-widest opacity-40">
+    <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-widest opacity-40">
       {label}
     </span>
   </div>
 );
 
-/* ─── animated mesh orbs ─── */
 const Orb = ({ className, style }) => (
   <div
     className={`absolute rounded-full blur-[100px] pointer-events-none ${className}`}
@@ -40,8 +42,90 @@ const Orb = ({ className, style }) => (
   />
 );
 
+/* ─── mobile nav drawer ─── */
+const MobileMenu = ({ open, onClose, navigate }) => (
+  <AnimatePresence>
+    {open && (
+      <>
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          onClick={onClose}
+        />
+        <motion.div
+          initial={{ x: "100%" }}
+          animate={{ x: 0 }}
+          exit={{ x: "100%" }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className="fixed top-0 right-0 bottom-0 z-50 w-72 flex flex-col border-l border-white/10"
+          style={{ backgroundColor: "rgba(10,10,14,0.97)" }}
+        >
+          {/* drawer header */}
+          <div className="flex items-center justify-between px-6 h-16 border-b border-white/[0.06]">
+            <Logo />
+            <button
+              onClick={onClose}
+              className="p-1.5 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+            >
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* nav links */}
+          <nav className="flex flex-col gap-1 p-4 flex-1">
+            {["Features", "How it works", "Pricing"].map((l, i) => (
+              <motion.a
+                key={l}
+                href={`#${l.toLowerCase().replace(/ /g, "-")}`}
+                onClick={onClose}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.07 }}
+                className="px-4 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-[0.18em]
+                           text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+              >
+                {l}
+              </motion.a>
+            ))}
+          </nav>
+
+          {/* auth buttons */}
+          <div className="p-4 border-t border-white/[0.06] flex flex-col gap-3">
+            <button
+              onClick={() => {
+                navigate("/login");
+                onClose();
+              }}
+              className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest
+                         border border-white/10 text-gray-300 hover:bg-white/5 transition-all"
+            >
+              Login
+            </button>
+            <button
+              onClick={() => {
+                navigate("/register");
+                onClose();
+              }}
+              className="w-full py-3 rounded-xl text-[10px] font-black uppercase tracking-widest
+                         flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(255,102,0,0.3)]
+                         hover:brightness-110 active:scale-95 transition-all"
+              style={{ backgroundColor: colors.primary, color: "white" }}
+            >
+              Get Started <ArrowUpRightIcon className="w-3 h-3" />
+            </button>
+          </div>
+        </motion.div>
+      </>
+    )}
+  </AnimatePresence>
+);
+
+/* ─── main component ─── */
 const LandingPage = () => {
   const [activeFaq, setActiveFaq] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   const faqs = [
@@ -103,10 +187,19 @@ const LandingPage = () => {
       className="min-h-screen overflow-x-hidden selection:bg-orange-500/30 selection:text-orange-500"
       style={{ backgroundColor: colors.background, color: colors.textMain }}
     >
+      {/* ── MOBILE DRAWER ── */}
+      <MobileMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        navigate={navigate}
+      />
+
       {/* ── NAVBAR ── */}
       <nav
-        className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-5xl
-                   rounded-2xl border border-white/[0.06] backdrop-blur-xl px-6 h-16 flex items-center justify-between
+        className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-50
+                   w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-5xl
+                   rounded-xl sm:rounded-2xl border border-white/[0.06] backdrop-blur-xl
+                   px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between
                    shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
         style={{ backgroundColor: "rgba(10,10,14,0.85)" }}
       >
@@ -115,15 +208,10 @@ const LandingPage = () => {
           className="flex items-center gap-2.5 cursor-pointer select-none"
           onClick={() => navigate("/")}
         >
-          <div className="w-8 h-8 rounded-xl bg-orange-600 flex items-center justify-center font-black italic text-base shadow-[0_0_16px_rgba(255,102,0,0.5)]">
-            C
-          </div>
-          <span className="text-lg font-black tracking-tighter uppercase italic">
-            Collo<span style={{ color: colors.primary }}>Q</span>
-          </span>
+          <Logo />
         </div>
 
-        {/* Links */}
+        {/* Desktop links */}
         <div className="hidden md:flex items-center gap-7 text-[10px] font-black uppercase tracking-[0.18em] text-gray-500">
           {["Features", "How it works", "Pricing"].map((l) => (
             <a
@@ -136,69 +224,85 @@ const LandingPage = () => {
           ))}
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2">
+        {/* Desktop actions */}
+        <div className="hidden md:flex items-center gap-2">
           <button
             onClick={() => navigate("/login")}
-            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-white transition-colors rounded-xl hover:bg-white/5"
+            className="px-4 py-2 text-[10px] font-black uppercase tracking-widest text-gray-400
+                       hover:text-white transition-colors rounded-xl hover:bg-white/5"
           >
             Login
           </button>
           <button
             onClick={() => navigate("/register")}
-            className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all
-                       hover:brightness-110 active:scale-95 shadow-[0_4px_20px_rgba(255,102,0,0.25)]
-                       flex items-center gap-1.5"
+            className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest
+                       hover:brightness-110 active:scale-95 transition-all
+                       shadow-[0_4px_20px_rgba(255,102,0,0.25)] flex items-center gap-1.5"
             style={{ backgroundColor: colors.primary, color: "white" }}
           >
-            Get Started
-            <ArrowUpRightIcon className="w-3 h-3" />
+            Get Started <ArrowUpRightIcon className="w-3 h-3" />
+          </button>
+        </div>
+
+        {/* Mobile: login + hamburger */}
+        <div className="flex md:hidden items-center gap-2">
+          <button
+            onClick={() => navigate("/login")}
+            className="px-3 py-1.5 text-[9px] font-black uppercase tracking-widest
+                       text-gray-400 hover:text-white transition-colors rounded-lg hover:bg-white/5"
+          >
+            Login
+          </button>
+          <button
+            onClick={() => setMenuOpen(true)}
+            className="p-2 rounded-xl hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+          >
+            <Bars3Icon className="w-5 h-5" />
           </button>
         </div>
       </nav>
 
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-20 px-6 overflow-hidden">
-        {/* Background orbs */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center pt-28 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden">
         <Orb
-          className="w-[700px] h-[700px] top-[-200px] left-1/2 -translate-x-1/2 opacity-[0.12]"
+          className="w-[400px] sm:w-[700px] h-[400px] sm:h-[700px] top-[-150px] sm:top-[-200px] left-1/2 -translate-x-1/2 opacity-[0.12]"
           style={{
             background: "radial-gradient(circle, #ff6600 0%, transparent 70%)",
           }}
         />
         <Orb
-          className="w-[400px] h-[400px] bottom-0 left-[5%] opacity-[0.06]"
+          className="w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bottom-0 left-[-5%] opacity-[0.06]"
           style={{
             background: "radial-gradient(circle, #ff8833 0%, transparent 70%)",
           }}
         />
         <Orb
-          className="w-[300px] h-[300px] top-[30%] right-[5%] opacity-[0.05]"
+          className="hidden sm:block w-[300px] h-[300px] top-[30%] right-[5%] opacity-[0.05]"
           style={{
             background: "radial-gradient(circle, #ff4400 0%, transparent 70%)",
           }}
         />
 
-        {/* Fine grid overlay */}
+        {/* Grid texture */}
         <div
           className="absolute inset-0 opacity-[0.025] pointer-events-none"
           style={{
             backgroundImage:
               "linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)",
-            backgroundSize: "60px 60px",
+            backgroundSize: "40px 40px sm:60px sm:60px",
           }}
         />
 
-        <div className="max-w-5xl mx-auto text-center relative z-10 flex flex-col items-center">
+        <div className="max-w-5xl w-full mx-auto text-center relative z-10 flex flex-col items-center">
           {/* Badge */}
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-orange-500/20
-                       bg-orange-500/5 mb-10 backdrop-blur-sm"
+            className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full border border-orange-500/20
+                       bg-orange-500/5 mb-7 sm:mb-10 backdrop-blur-sm"
           >
             <SparklesIcon className="w-3 h-3 text-orange-400" />
-            <span className="text-[9px] font-black uppercase tracking-[0.25em] text-orange-300/70">
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em] sm:tracking-[0.25em] text-orange-300/70">
               Next-Gen Interview Platform
             </span>
           </motion.div>
@@ -208,7 +312,7 @@ const LandingPage = () => {
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-            className="text-[clamp(3.5rem,11vw,8rem)] font-black tracking-tighter leading-[0.88] mb-6"
+            className="text-[clamp(2.8rem,12vw,8rem)] font-black tracking-tighter leading-[0.88] mb-5 sm:mb-6"
           >
             MASTER YOUR
             <br />
@@ -223,12 +327,12 @@ const LandingPage = () => {
             </span>
           </motion.h1>
 
-          {/* Sub */}
+          {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="max-w-xl mx-auto text-base md:text-lg font-medium mb-12 leading-relaxed"
+            className="max-w-sm sm:max-w-xl mx-auto text-sm sm:text-base md:text-lg font-medium mb-8 sm:mb-12 leading-relaxed px-2"
             style={{ color: colors.textMuted, opacity: 0.7 }}
           >
             Practice real-world mock interviews with industry experts. Get
@@ -240,11 +344,11 @@ const LandingPage = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-20"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 mb-14 sm:mb-20 w-full max-w-sm sm:max-w-none mx-auto"
           >
             <button
               onClick={() => navigate("/register")}
-              className="w-full sm:w-auto px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em]
+              className="px-8 sm:px-10 py-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em]
                          flex items-center justify-center gap-2 group
                          shadow-[0_10px_40px_rgba(255,102,0,0.35)] hover:shadow-[0_12px_50px_rgba(255,102,0,0.5)]
                          hover:brightness-110 active:scale-95 transition-all"
@@ -254,7 +358,7 @@ const LandingPage = () => {
               <ChevronRightIcon className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
-              className="w-full sm:w-auto px-10 py-4 rounded-2xl border text-[11px] font-black uppercase
+              className="px-8 sm:px-10 py-4 rounded-2xl border text-[11px] font-black uppercase
                          tracking-[0.2em] hover:bg-white/5 hover:border-white/20 transition-all active:scale-95"
               style={{ borderColor: colors.border, color: colors.textMuted }}
             >
@@ -262,12 +366,12 @@ const LandingPage = () => {
             </button>
           </motion.div>
 
-          {/* Stats row */}
+          {/* Stats */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
-            className="flex items-center gap-12 justify-center"
+            className="flex items-center gap-6 sm:gap-12 justify-center"
           >
             <StatPill value="12K+" label="Interviews done" />
             <div className="w-px h-8 bg-white/10" />
@@ -277,9 +381,8 @@ const LandingPage = () => {
           </motion.div>
         </div>
 
-        {/* Bottom fade */}
         <div
-          className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+          className="absolute bottom-0 left-0 right-0 h-24 sm:h-32 pointer-events-none"
           style={{
             background: `linear-gradient(to bottom, transparent, ${colors.background})`,
           }}
@@ -287,13 +390,16 @@ const LandingPage = () => {
       </section>
 
       {/* ── FEATURES ── */}
-      <section id="features" className="max-w-6xl mx-auto px-6 py-24">
-        <div className="mb-14 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+      <section
+        id="features"
+        className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24"
+      >
+        <div className="mb-10 sm:mb-14 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <p className="text-[9px] font-black uppercase tracking-[0.4em] text-orange-500 mb-3">
               Platform Features
             </p>
-            <h2 className="text-4xl md:text-5xl font-black uppercase tracking-tighter italic leading-tight">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tighter italic leading-tight">
               Everything You
               <br />
               <span style={{ color: colors.primary }}>Need to Win.</span>
@@ -304,14 +410,13 @@ const LandingPage = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           {features.map((f, i) => (
             <motion.div
               key={i}
               whileHover={{ y: -4, scale: 1.01 }}
               transition={{ type: "spring", stiffness: 300 }}
-              className={`${f.span} relative group p-8 rounded-2xl border overflow-hidden cursor-default
-                          transition-colors duration-300`}
+              className={`${f.span} relative group p-6 sm:p-8 rounded-2xl border overflow-hidden cursor-default transition-colors duration-300`}
               style={{
                 backgroundColor: f.accent
                   ? "rgba(255,102,0,0.04)"
@@ -325,24 +430,26 @@ const LandingPage = () => {
                 e.currentTarget.style.borderColor = colors.border;
               }}
             >
-              {/* Large bg icon */}
               <div className="absolute right-4 bottom-4 opacity-[0.04] group-hover:opacity-[0.07] transition-opacity">
-                {React.cloneElement(f.icon, { className: "w-40 h-40" })}
+                {React.cloneElement(f.icon, {
+                  className: "w-32 sm:w-40 h-32 sm:h-40",
+                })}
               </div>
 
               <Tag>{f.tag}</Tag>
 
               <div
                 className="w-10 h-10 rounded-xl bg-orange-500/10 border border-orange-500/20
-                              flex items-center justify-center text-orange-400 mt-6 mb-5 group-hover:bg-orange-500/15 transition-colors"
+                              flex items-center justify-center text-orange-400 mt-5 sm:mt-6 mb-4 sm:mb-5
+                              group-hover:bg-orange-500/15 transition-colors"
               >
                 {f.icon}
               </div>
 
-              <h3 className="text-2xl font-black uppercase italic tracking-tight leading-tight mb-3 whitespace-pre-line">
+              <h3 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight leading-tight mb-2 sm:mb-3 whitespace-pre-line">
                 {f.title}
               </h3>
-              <p className="text-xs font-bold uppercase tracking-widest opacity-50 leading-relaxed max-w-xs">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50 leading-relaxed max-w-xs">
                 {f.desc}
               </p>
             </motion.div>
@@ -351,20 +458,23 @@ const LandingPage = () => {
       </section>
 
       {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" className="max-w-5xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
+      <section
+        id="how-it-works"
+        className="max-w-5xl mx-auto px-4 sm:px-6 py-16 sm:py-24"
+      >
+        <div className="text-center mb-12 sm:mb-16">
           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-orange-500 mb-3">
             Process
           </p>
-          <h2 className="text-4xl font-black uppercase italic tracking-tighter">
+          <h2 className="text-3xl sm:text-4xl font-black uppercase italic tracking-tighter">
             Three Steps to{" "}
             <span style={{ color: colors.primary }}>Success.</span>
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
-          {/* connector line */}
-          <div className="hidden md:block absolute top-10 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
+          {/* connector — only visible at sm+ */}
+          <div className="hidden sm:block absolute top-10 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
 
           {[
             {
@@ -389,22 +499,23 @@ const LandingPage = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className="flex flex-col items-center text-center p-8 rounded-2xl border"
+              className="flex flex-col items-center text-center p-6 sm:p-8 rounded-2xl border"
               style={{
                 backgroundColor: colors.surface,
                 borderColor: colors.border,
               }}
             >
               <div
-                className="w-12 h-12 rounded-full border border-orange-500/30 flex items-center justify-center
-                              text-orange-400 text-[10px] font-black tracking-widest mb-6 bg-orange-500/5"
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full border border-orange-500/30
+                              flex items-center justify-center text-orange-400 text-[10px] font-black
+                              tracking-widest mb-5 sm:mb-6 bg-orange-500/5"
               >
                 {s.step}
               </div>
-              <h3 className="text-lg font-black uppercase italic tracking-tight mb-3">
+              <h3 className="text-base sm:text-lg font-black uppercase italic tracking-tight mb-2 sm:mb-3">
                 {s.title}
               </h3>
-              <p className="text-xs font-bold uppercase tracking-widest opacity-50 leading-relaxed">
+              <p className="text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-50 leading-relaxed">
                 {s.desc}
               </p>
             </motion.div>
@@ -413,12 +524,12 @@ const LandingPage = () => {
       </section>
 
       {/* ── FAQ ── */}
-      <section className="max-w-3xl mx-auto px-6 py-24">
-        <div className="text-center mb-14">
+      <section className="max-w-3xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
+        <div className="text-center mb-10 sm:mb-14">
           <p className="text-[9px] font-black uppercase tracking-[0.4em] text-orange-500 mb-3">
             FAQ
           </p>
-          <h2 className="text-4xl font-black uppercase italic tracking-tighter">
+          <h2 className="text-3xl sm:text-4xl font-black uppercase italic tracking-tighter">
             Common <span style={{ color: colors.primary }}>Questions.</span>
           </h2>
         </div>
@@ -437,23 +548,22 @@ const LandingPage = () => {
             >
               <button
                 onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                className="w-full px-7 py-6 flex items-center justify-between text-left gap-4 outline-none"
+                className="w-full px-5 sm:px-7 py-5 sm:py-6 flex items-center justify-between text-left gap-3 sm:gap-4 outline-none"
               >
-                <span className="text-[11px] font-black uppercase tracking-[0.15em] leading-relaxed">
+                <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-[0.12em] sm:tracking-[0.15em] leading-relaxed">
                   {faq.q}
                 </span>
                 <div
-                  className="flex-shrink-0 w-7 h-7 rounded-full border flex items-center justify-center
-                                transition-colors"
+                  className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full border flex items-center justify-center transition-colors"
                   style={{
                     borderColor:
                       activeFaq === i ? "rgba(255,102,0,0.5)" : colors.border,
                   }}
                 >
                   {activeFaq === i ? (
-                    <MinusIcon className="w-3.5 h-3.5 text-orange-500" />
+                    <MinusIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-orange-500" />
                   ) : (
-                    <PlusIcon className="w-3.5 h-3.5 text-gray-500" />
+                    <PlusIcon className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-500" />
                   )}
                 </div>
               </button>
@@ -466,7 +576,7 @@ const LandingPage = () => {
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.25, ease: "easeInOut" }}
                   >
-                    <div className="px-7 pb-6 text-sm font-medium leading-relaxed opacity-55 border-t border-white/5 pt-4">
+                    <div className="px-5 sm:px-7 pb-5 sm:pb-6 text-xs sm:text-sm font-medium leading-relaxed opacity-55 border-t border-white/5 pt-4">
                       {faq.a}
                     </div>
                   </motion.div>
@@ -478,16 +588,16 @@ const LandingPage = () => {
       </section>
 
       {/* ── CTA BANNER ── */}
-      <section className="max-w-6xl mx-auto px-6 pb-24">
+      <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16 sm:pb-24">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative overflow-hidden rounded-3xl p-16 text-center border border-orange-500/20"
+          className="relative overflow-hidden rounded-2xl sm:rounded-3xl px-6 sm:px-12 py-14 sm:py-16 text-center border border-orange-500/20"
           style={{ backgroundColor: "rgba(255,102,0,0.06)" }}
         >
           <Orb
-            className="w-[500px] h-[300px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20"
+            className="w-[300px] sm:w-[500px] h-[200px] sm:h-[300px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20"
             style={{
               background:
                 "radial-gradient(ellipse, #ff6600 0%, transparent 70%)",
@@ -495,22 +605,22 @@ const LandingPage = () => {
           />
 
           <div className="relative z-10">
-            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-orange-400 mb-5">
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-orange-400 mb-4 sm:mb-5">
               Start Today
             </p>
-            <h2 className="text-5xl md:text-6xl font-black uppercase italic tracking-tighter mb-8">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase italic tracking-tighter mb-5 sm:mb-8">
               Ready to Ace Your{" "}
               <span style={{ color: colors.primary }}>Interview?</span>
             </h2>
-            <p className="max-w-md mx-auto text-sm opacity-50 font-medium mb-10">
+            <p className="max-w-sm sm:max-w-md mx-auto text-xs sm:text-sm opacity-50 font-medium mb-8 sm:mb-10 px-2">
               Join thousands of engineers who've levelled up their interview
               performance with ColloQ.
             </p>
             <button
               onClick={() => navigate("/register")}
-              className="px-12 py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em]
+              className="w-full sm:w-auto px-8 sm:px-12 py-4 sm:py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em]
                          shadow-[0_10px_50px_rgba(255,102,0,0.4)] hover:shadow-[0_12px_60px_rgba(255,102,0,0.55)]
-                         hover:brightness-110 active:scale-95 transition-all inline-flex items-center gap-2 group"
+                         hover:brightness-110 active:scale-95 transition-all inline-flex items-center justify-center gap-2 group"
               style={{ backgroundColor: colors.primary, color: "white" }}
             >
               Get Started — It's Free
@@ -522,24 +632,19 @@ const LandingPage = () => {
 
       {/* ── FOOTER ── */}
       <footer
-        className="border-t py-10 px-6"
+        className="border-t py-8 sm:py-10 px-4 sm:px-6"
         style={{ borderColor: colors.border }}
       >
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-5 sm:gap-6">
           <div className="flex items-center gap-2 opacity-60">
-            <div className="w-6 h-6 bg-orange-600 rounded-lg flex items-center justify-center font-black italic text-xs">
-              C
-            </div>
-            <span className="text-sm font-black tracking-tighter uppercase italic">
-              Collo<span style={{ color: colors.primary }}>Q</span>
-            </span>
+            <Logo />
           </div>
 
-          <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-20 italic">
+          <p className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.4em] opacity-20 italic text-center">
             © 2026 ColloQ Platform. Engineered for Excellence.
           </p>
 
-          <div className="flex gap-6 text-[9px] font-black uppercase tracking-widest opacity-30">
+          <div className="flex gap-5 sm:gap-6 text-[9px] font-black uppercase tracking-widest opacity-30">
             {["Privacy", "Terms", "Contact"].map((l) => (
               <a
                 key={l}
