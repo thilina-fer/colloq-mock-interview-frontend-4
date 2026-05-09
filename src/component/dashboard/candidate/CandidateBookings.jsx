@@ -36,7 +36,7 @@ const CandidateBookings = () => {
 
   if (loading) {
     return (
-      <div className="py-20 flex flex-col items-center justify-center border border-dashed border-white/5 rounded-sm bg-white/[0.01]">
+      <div className="py-20 flex flex-col items-center justify-center border border-dashed border-white/5 rounded-sm bg-white/0.01">
         <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
         <p className="text-[9px] font-black uppercase text-gray-500 tracking-[0.3em]">
           Syncing Your Sessions...
@@ -57,7 +57,7 @@ const CandidateBookings = () => {
             />
           ))
         ) : (
-          <div className="col-span-full py-20 border border-dashed border-white/5 text-center rounded-sm bg-white/[0.01]">
+          <div className="col-span-full py-20 border border-dashed border-white/5 text-center rounded-sm bg-white/0.01">
             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-gray-700">
               No Booking History Found
             </p>

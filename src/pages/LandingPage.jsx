@@ -63,7 +63,7 @@ const MobileMenu = ({ open, onClose, navigate }) => (
           style={{ backgroundColor: "rgba(10,10,14,0.97)" }}
         >
           {/* drawer header */}
-          <div className="flex items-center justify-between px-6 h-16 border-b border-white/[0.06]">
+          <div className="flex items-center justify-between px-6 h-16 border-b border-white/0.06">
             <Logo />
             <button
               onClick={onClose}
@@ -92,7 +92,7 @@ const MobileMenu = ({ open, onClose, navigate }) => (
           </nav>
 
           {/* auth buttons */}
-          <div className="p-4 border-t border-white/[0.06] flex flex-col gap-3">
+          <div className="p-4 border-t border-white/0.06 flex flex-col gap-3">
             <button
               onClick={() => {
                 navigate("/login");
@@ -198,7 +198,7 @@ const LandingPage = () => {
       <nav
         className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-50
                    w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-5xl
-                   rounded-xl sm:rounded-2xl border border-white/[0.06] backdrop-blur-xl
+                   rounded-xl sm:rounded-2xl border border-white/0.06 backdrop-blur-xl
                    px-4 sm:px-6 h-14 sm:h-16 flex items-center justify-between
                    shadow-[0_8px_32px_rgba(0,0,0,0.4)]"
         style={{ backgroundColor: "rgba(10,10,14,0.85)" }}
@@ -265,19 +265,19 @@ const LandingPage = () => {
       {/* ── HERO ── */}
       <section className="relative min-h-screen flex flex-col items-center justify-center pt-28 sm:pt-32 pb-16 sm:pb-20 px-4 sm:px-6 overflow-hidden">
         <Orb
-          className="w-[400px] sm:w-[700px] h-[400px] sm:h-[700px] top-[-150px] sm:top-[-200px] left-1/2 -translate-x-1/2 opacity-[0.12]"
+          className="w-400px sm:w-700px h-400px sm:h-700px -top-150px sm:-top-200px left-1/2 -translate-x-1/2 opacity-[0.12]"
           style={{
             background: "radial-gradient(circle, #ff6600 0%, transparent 70%)",
           }}
         />
         <Orb
-          className="w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bottom-0 left-[-5%] opacity-[0.06]"
+          className="w-250px sm:w-400px h-250px sm:h-400px bottom-0 left-[-5%] opacity-[0.06]"
           style={{
             background: "radial-gradient(circle, #ff8833 0%, transparent 70%)",
           }}
         />
         <Orb
-          className="hidden sm:block w-[300px] h-[300px] top-[30%] right-[5%] opacity-[0.05]"
+          className="hidden sm:block w-300px h-300px top-[30%] right-[5%] opacity-[0.05]"
           style={{
             background: "radial-gradient(circle, #ff4400 0%, transparent 70%)",
           }}
@@ -474,7 +474,7 @@ const LandingPage = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative">
           {/* connector — only visible at sm+ */}
-          <div className="hidden sm:block absolute top-10 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-gradient-to-r from-transparent via-orange-500/30 to-transparent" />
+          <div className="hidden sm:block absolute top-10 left-[calc(16.67%+1rem)] right-[calc(16.67%+1rem)] h-px bg-linear-to-r from-transparent via-orange-500/30 to-transparent" />
 
           {[
             {
@@ -554,7 +554,7 @@ const LandingPage = () => {
                   {faq.q}
                 </span>
                 <div
-                  className="flex-shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full border flex items-center justify-center transition-colors"
+                  className="shrink-0 w-6 h-6 sm:w-7 sm:h-7 rounded-full border flex items-center justify-center transition-colors"
                   style={{
                     borderColor:
                       activeFaq === i ? "rgba(255,102,0,0.5)" : colors.border,
@@ -597,7 +597,7 @@ const LandingPage = () => {
           style={{ backgroundColor: "rgba(255,102,0,0.06)" }}
         >
           <Orb
-            className="w-[300px] sm:w-[500px] h-[200px] sm:h-[300px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20"
+            className="w-300px sm:w-500px h-200px sm:h-300px top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20"
             style={{
               background:
                 "radial-gradient(ellipse, #ff6600 0%, transparent 70%)",

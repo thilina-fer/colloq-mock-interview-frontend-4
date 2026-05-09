@@ -101,7 +101,7 @@ const InterviewerDashboard = () => {
         style={{ backgroundColor: colors.background }}
       >
         <Header />
-        <main className="flex-grow flex items-center justify-center p-6">
+        <main className="grow flex items-center justify-center p-6">
           <div className="max-w-lg w-full p-12 border-2 border-dashed border-orange-500/20 bg-black/80 backdrop-blur-md rounded-2xl text-center space-y-8 animate-in zoom-in">
             <LockClockIcon sx={{ fontSize: 40, color: colors.primary }} />
             <h2 className="text-2xl font-black uppercase text-white">
@@ -130,8 +130,8 @@ const InterviewerDashboard = () => {
     >
       <Header />
 
-      <main className="flex-grow w-full max-w-[1400px] mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
-        <div className="w-full lg:w-[320px] flex-shrink-0">
+      <main className="grow w-full max-w-1400px mx-auto p-4 md:p-8 flex flex-col lg:flex-row gap-8">
+        <div className="w-full lg:w-[320px] shrink-0">
           <InterviewerSidebar
             setCurrentView={setCurrentView}
             currentView={currentView}
@@ -140,9 +140,9 @@ const InterviewerDashboard = () => {
           />
         </div>
 
-        <div className="flex-grow flex flex-col min-w-0">
+        <div className="grow flex flex-col min-w-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8 animate-in fade-in slide-in-from-top-4 duration-500">
-            <div className="bg-white/[0.02] border border-white/10 p-6 rounded-2xl backdrop-blur-md flex items-center justify-between group hover:border-orange-500/30 transition-all">
+            <div className="bg-white/0.02 border border-white/10 p-6 rounded-2xl backdrop-blur-md flex items-center justify-between group hover:border-orange-500/30 transition-all">
               <div>
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
                   Available Balance
@@ -167,7 +167,7 @@ const InterviewerDashboard = () => {
               </div>
             </div>
 
-            <div className="bg-white/[0.02] border border-white/10 p-6 rounded-2xl backdrop-blur-md flex items-center justify-between group hover:border-green-500/30 transition-all">
+            <div className="bg-white/0.02 border border-white/10 p-6 rounded-2xl backdrop-blur-md flex items-center justify-between group hover:border-green-500/30 transition-all">
               <div>
                 <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
                   Profile Status
@@ -185,7 +185,7 @@ const InterviewerDashboard = () => {
             </div>
           </div>
 
-          <div className="flex-grow">
+          <div className="grow">
             {currentView === "wallet" ? (
               <InterviewerWallet />
             ) : currentView === "availability" ? (

@@ -6,6 +6,7 @@ import CandidateSidebar from "../../../component/dashboard/candidate/CandidateSi
 import InterviewerSelectionModal from "../../../component/bookings/InterviewerSelectionModal";
 import CandidateBookings from "../../../component/dashboard/candidate/CandidateBookings"; // 🎯 අලුතින් හදපු component එක import කළා
 
+
 // Material Icons
 import HistoryIcon from "@mui/icons-material/History";
 
@@ -26,7 +27,7 @@ const CandidateDashboard = () => {
       <Header />
 
       {/* --- MAIN CONTENT AREA --- */}
-      <main className="flex-grow w-full max-w-[1400px] mx-auto p-4 md:p-6 flex flex-col lg:flex-row gap-6">
+      <main className="grow w-full max-w-1400px mx-auto p-4 md:p-6 flex flex-col lg:flex-row gap-6">
         {/* LEFT COLUMN: Sidebar & Quick Stats */}
         <div className="w-full lg:w-1/4 flex flex-col gap-4">
           <CandidateSidebar
@@ -34,7 +35,7 @@ const CandidateDashboard = () => {
           />
 
           {/* Quick Info Box */}
-          <div className="border border-white/5 bg-white/[0.01] p-6 rounded-sm space-y-4">
+          <div className="border border-white/5 bg-white/0.01 p-6 rounded-sm space-y-4">
             <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-500">
               Dashboard Tip
             </h5>
@@ -63,7 +64,7 @@ const CandidateDashboard = () => {
             >
               My Interview Sessions
               {activeTab === "pending" && (
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-orange-500 shadow-[0_0_10px_rgba(234,88,12,0.5)]" />
+                <div className="absolute bottom-0 left-0 w-full h-2px bg-orange-500 shadow-[0_0_10px_rgba(234,88,12,0.5)]" />
               )}
             </button>
 
@@ -81,13 +82,13 @@ const CandidateDashboard = () => {
             >
               Past History
               {activeTab === "completed" && (
-                <div className="absolute bottom-0 left-0 w-full h-[2px] bg-orange-500 shadow-[0_0_10px_rgba(234,88,12,0.5)]" />
+                <div className="absolute bottom-0 left-0 w-full h-2px bg-orange-500 shadow-[0_0_10px_rgba(234,88,12,0.5)]" />
               )}
             </button>
           </div>
 
           {/* DYNAMIC CONTENT DISPLAY */}
-          <div className="flex-grow min-h-[500px]">
+          <div className="grow min-h-500px">
             {activeTab === "pending" ? (
               /* 🚀 මෙතන තමයි ඔයාගේ අලුත් Card list එක ලෝඩ් වෙන්නේ */
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -95,7 +96,7 @@ const CandidateDashboard = () => {
               </div>
             ) : (
               /* COMPLETED SESSIONS: Empty State */
-              <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-white/5 bg-white/[0.01] rounded-sm py-20">
+              <div className="w-full h-full flex flex-col items-center justify-center border border-dashed border-white/5 bg-white/0.01 rounded-sm py-20">
                 <div className="p-4 rounded-full bg-white/5 mb-4">
                   <HistoryIcon
                     className="text-gray-700"
