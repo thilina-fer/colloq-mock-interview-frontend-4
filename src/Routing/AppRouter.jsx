@@ -6,7 +6,7 @@ import LandingPage from "../pages/LandingPage";
 import CandidateDashboard from "../pages/Dashboard/Candidate/CandidateDashboard";
 import InterviewerDashboard from "../pages/Dashboard/Interviewer/InterviewerDashboard";
 import AdminDashboard from "../pages/admin/AdminDashboard";
-
+import ColloQInterview from "../pages/interview/ColloQInterview";
 
 function AppRouter() {
   return (
@@ -18,6 +18,7 @@ function AppRouter() {
         <Route path="/dashboard/candidate" element={<CandidateDashboard />} />
         <Route path="/dashboard/interviewer" element={<InterviewerDashboard />} />
         <Route path="/dashboard/admin" element={<AdminDashboard />} />
+        <Route path="/interview" element={<ColloQInterview />} />
       </Routes>
     </BrowserRouter>
   );
