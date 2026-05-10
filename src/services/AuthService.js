@@ -1,14 +1,160 @@
+// import axios from "axios";
+
+// // Oya Spring Boot run wena port eka (samanyayen 8080)
+// const API_BASE_URL = "http://localhost:8080/api/v1";
+
+// // 1. Axios Instance eka hadaganna
+// const apiClient = axios.create({
+//   baseURL: API_BASE_URL,
+// });
+
+// // 2. Request Interceptor: Hama API call ekakama Token eka auto attach karanna meken puluwan
+// apiClient.interceptors.request.use(
+//   (config) => {
+//     const token = localStorage.getItem("authToken");
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`;
+//     }
+//     return config;
+//   },
+//   (error) => {
+//     return Promise.reject(error);
+//   },
+// );
+
+// // 3. Auth Service Functions
+// export const AuthService = {
+//   // Login API Call
+//   // Login API Call
+//   login: async (authDTO) => {
+//     try {
+//       const response = await apiClient.post("/auth/login", authDTO);
+
+//       // Backend eken ena response eka mokakda kiyala console eke balamu
+//       console.log("Login Full Response:", response.data);
+
+//       // Token eka thiyenna puluwan nam 3nma api check karanawa
+//       const token =
+//         response.data.token || response.data.accessToken || response.data.jwt;
+
+//       if (token) {
+//         localStorage.setItem("authToken", token);
+//         console.log("Token successfully saved!");
+//       } else {
+//         console.error(
+//           "Token ekak backend eken awe naha! AuthResponseDTO eka check karanna.",
+//         );
+//       }
+
+//       return response.data;
+//     } catch (error) {
+//       throw error.response ? error.response.data : new Error("Network Error");
+//     }
+//   },
+
+//   // Initial Register API Call
+//   register: async (registerDTO) => {
+//     try {
+//       const response = await apiClient.post("/auth/register", registerDTO);
+//       return response.data; // Meken return wenne oya backend eken ewana String eka
+//     } catch (error) {
+//       throw error.response ? error.response.data : new Error("Network Error");
+//     }
+//   },
+
+//   // Google Login API Call
+//   // googleLogin: async (googleAuthDTO) => {
+//   //   try {
+//   //     const response = await apiClient.post("/auth/google", googleAuthDTO);
+//   //     if (response.data && response.data.token) {
+//   //       localStorage.setItem("authToken", response.data.token);
+//   //     }
+//   //     return response.data;
+//   //   } catch (error) {
+//   //     throw error.response ? error.response.data : new Error("Network Error");
+//   //   }
+//   // },
+
+//   // Get Current User API Call (Using Token)
+//   getCurrentUser: async () => {
+//     try {
+//       const response = await apiClient.get("/auth/me");
+//       return response.data; // AuthMeDTO eka return wenawa
+//     } catch (error) {
+//       throw error.response ? error.response.data : new Error("Network Error");
+//     }
+//   },
+
+//   // Complete Candidate Profile (Token is auto-attached)
+//   completeCandidateProfile: async (candidateProfileDTO) => {
+//     try {
+//       // TODO: Oya backend eke me endpoint eka `/candidate/profile` kiyala hadala nam methana danna
+//       const response = await apiClient.post(
+//         "/candidate/profile",
+//         candidateProfileDTO,
+//       );
+//       return response.data;
+//     } catch (error) {
+//       throw error.response ? error.response.data : new Error("Network Error");
+//     }
+//   },
+
+//   // Complete Interviewer Profile (Token is auto-attached)
+//   completeInterviewerProfile: async (interviewerProfileDTO) => {
+//     try {
+//       // TODO: Oya backend eke me endpoint eka `/interviewer/profile` kiyala hadala nam methana danna
+//       const response = await apiClient.post(
+//         "/interviewer/profile",
+//         interviewerProfileDTO,
+//       );
+//       return response.data;
+//     } catch (error) {
+//       throw error.response ? error.response.data : new Error("Network Error");
+//     }
+//   },
+
+//   // Logout Function
+//   logout: () => {
+//     localStorage.removeItem("authToken");
+//     window.location.href = "/login"; // Logout unama login ekata yanawa
+//   },
+
+//   // Token eka thiyenawada kiyala check karanna chuti helper ekak
+//   isAuthenticated: () => {
+//     const token = localStorage.getItem("authToken");
+//     return !!token;
+//   },
+// };
+
+// // Google Login API Call
+// googleLogin: async (idToken, role) => {
+//     try {
+//         // Backend eka balapororththu wenne GoogleAuthDTO (idToken, role)
+//         const response = await apiClient.post("/auth/google", {
+//             idToken: idToken,
+//             role: role
+//         });
+
+//         if (response.data && response.data.token) {
+//             localStorage.setItem("authToken", response.data.token);
+//         }
+//         return response.data;
+//     } catch (error) {
+//         throw error.response ? error.response.data : new Error("Google Auth failed");
+//     }
+// }
+
 import axios from "axios";
 
-// Oya Spring Boot run wena port eka (samanyayen 8080)
+// Spring Boot Backend URL
 const API_BASE_URL = "http://localhost:8080/api/v1";
 
-// 1. Axios Instance eka hadaganna
+// 1. Axios Instance එක සෑදීම
 const apiClient = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// 2. Request Interceptor: Hama API call ekakama Token eka auto attach karanna meken puluwan
+// 2. Request Interceptor: සෑම API call එකකටම Token එක ඇමිණීම
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("authToken");
@@ -24,73 +170,90 @@ apiClient.interceptors.request.use(
 
 // 3. Auth Service Functions
 export const AuthService = {
-  // Login API Call
-  // Login API Call
+  // සාමාන්‍ය Login එක
   login: async (authDTO) => {
     try {
       const response = await apiClient.post("/auth/login", authDTO);
-
-      // Backend eken ena response eka mokakda kiyala console eke balamu
-      console.log("Login Full Response:", response.data);
-
-      // Token eka thiyenna puluwan nam 3nma api check karanawa
       const token =
         response.data.token || response.data.accessToken || response.data.jwt;
 
       if (token) {
         localStorage.setItem("authToken", token);
-        console.log("Token successfully saved!");
-      } else {
-        console.error(
-          "Token ekak backend eken awe naha! AuthResponseDTO eka check karanna.",
-        );
       }
-
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : new Error("Network Error");
     }
   },
 
-  // Initial Register API Call
+  // නිවැරදි කළ Google Login එක (දැන් මෙය AuthService ඇතුළත ඇත)
+  // googleLogin: async (idToken, role) => {
+  //   try {
+  //     // Backend එක බලාපොරොත්තු වන GoogleAuthDTO structure එකට අනුව දත්ත යැවීම
+  //     const response = await apiClient.post("/auth/google", {
+  //       idToken: idToken,
+  //       role: role,
+  //     });
+
+  //     if (response.data && response.data.token) {
+  //       localStorage.setItem("authToken", response.data.token);
+  //     }
+  //     return response.data;
+  //   } catch (error) {
+  //     throw error.response
+  //       ? error.response.data
+  //       : new Error("Google Auth failed");
+  //   }
+  // },
+
+  // AuthService.js ඇතුළේ තියෙන googleLogin එක
+  googleLogin: async (idToken, role) => {
+    try {
+      const response = await apiClient.post("/auth/google", {
+        idToken: idToken,
+        role: role,
+      });
+
+      // 🎯 අලුත් ටෝකන් එක මොන නමින් ආවත් හරියටම අල්ලගෙන Save කරනවා
+      const token = response.data.token || response.data.accessToken || response.data.jwt;
+      
+      if (token) {
+        localStorage.setItem("authToken", token);
+        console.log("✅ New Google Token Saved!");
+      } else {
+        console.error("❌ Token not found in backend response:", response.data);
+      }
+      
+      return response.data;
+    } catch (error) {
+      throw error.response ? error.response.data : new Error("Google Auth failed");
+    }
+  },
+
   register: async (registerDTO) => {
     try {
       const response = await apiClient.post("/auth/register", registerDTO);
-      return response.data; // Meken return wenne oya backend eken ewana String eka
-    } catch (error) {
-      throw error.response ? error.response.data : new Error("Network Error");
-    }
-  },
-
-  // Google Login API Call
-  googleLogin: async (googleAuthDTO) => {
-    try {
-      const response = await apiClient.post("/auth/google", googleAuthDTO);
-      if (response.data && response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
-      }
       return response.data;
     } catch (error) {
       throw error.response ? error.response.data : new Error("Network Error");
     }
   },
 
-  // Get Current User API Call (Using Token)
   getCurrentUser: async () => {
     try {
       const response = await apiClient.get("/auth/me");
-      return response.data; // AuthMeDTO eka return wenawa
+      return response.data;
     } catch (error) {
       throw error.response ? error.response.data : new Error("Network Error");
     }
   },
 
-  // Complete Candidate Profile (Token is auto-attached)
+  // 🎯 403 Forbidden Error එක එනවා නම් මෙතන Path එක පරීක්ෂා කරන්න:
+  // ඔයාගේ පරණ error log එකේ තිබුණේ "/complete-profile" කියලා නම් ඒකම මෙතනටත් දෙන්න.
   completeCandidateProfile: async (candidateProfileDTO) => {
     try {
-      // TODO: Oya backend eke me endpoint eka `/candidate/profile` kiyala hadala nam methana danna
       const response = await apiClient.post(
-        "/candidate/profile",
+        "/candidate/complete-profile",
         candidateProfileDTO,
       );
       return response.data;
@@ -99,12 +262,10 @@ export const AuthService = {
     }
   },
 
-  // Complete Interviewer Profile (Token is auto-attached)
   completeInterviewerProfile: async (interviewerProfileDTO) => {
     try {
-      // TODO: Oya backend eke me endpoint eka `/interviewer/profile` kiyala hadala nam methana danna
       const response = await apiClient.post(
-        "/interviewer/profile",
+        "/interviewer/complete-profile",
         interviewerProfileDTO,
       );
       return response.data;
@@ -113,13 +274,11 @@ export const AuthService = {
     }
   },
 
-  // Logout Function
   logout: () => {
     localStorage.removeItem("authToken");
-    window.location.href = "/login"; // Logout unama login ekata yanawa
+    window.location.href = "/login";
   },
 
-  // Token eka thiyenawada kiyala check karanna chuti helper ekak
   isAuthenticated: () => {
     const token = localStorage.getItem("authToken");
     return !!token;
