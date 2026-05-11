@@ -1,32 +1,52 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { AuthService } from "../services/AuthService";
 
 export const PHASES = {
-  NAME: "NAME",
   LEVEL: "LEVEL",
   SPEC: "SPEC",
   MIC: "MIC",
   INTERVIEW: "INTERVIEW",
+  REPORT: "REPORT",
 };
 
-const INITIAL_MESSAGES = [
-  {
-    speaker: "ai",
-    text: "Hi, I'm ColloQ. Let's get you ready for your next big role. What is your name?",
-  },
-];
-
 export const useInterview = () => {
-  const [phase, setPhase] = useState(PHASES.NAME);
+  const [phase, setPhase] = useState(PHASES.LEVEL);
   const [userName, setUserName] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [level, setLevel] = useState("");
   const [role, setRole] = useState("");
-  const [chatMessages, setChatMessages] = useState(INITIAL_MESSAGES);
+  const [chatMessages, setChatMessages] = useState([]);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
 
+  const [report, setReport] = useState(null);
+  const [isEvaluating, setIsEvaluating] = useState(false);
+
   const recognitionRef = useRef(null);
   const timerRef = useRef(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const user = await AuthService.getCurrentUser();
+        if (user) {
+          setUserName(user.username);
+          setUserEmail(user.email);
+          const welcomeMsg = `Welcome back, ${user.username}! I am ColloQ. Let's get you ready for your next big role. What level are you targeting?`;
+          setChatMessages([{ speaker: "ai", text: welcomeMsg }]);
+          speak(welcomeMsg);
+        }
+      } catch (error) {
+        console.error("Could not fetch user data", error);
+        const fallbackMsg = "Hi, I am ColloQ. What level are you targeting?";
+        setChatMessages([{ speaker: "ai", text: fallbackMsg }]);
+        speak(fallbackMsg);
+      }
+    };
+    fetchUserData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     const SpeechRecognition =
@@ -44,7 +64,6 @@ export const useInterview = () => {
     };
     recognitionRef.current.onend = () => setIsRecording(false);
     recognitionRef.current.onerror = () => setIsRecording(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -84,11 +103,15 @@ export const useInterview = () => {
   const handleUserMessage = async (text) => {
     addMessage("user", text);
     try {
+      const token = localStorage.getItem("authToken");
       const response = await fetch(
         "http://localhost:8080/api/v1/interview/chat",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ userName, level, role, userMessage: text }),
         },
       );
@@ -104,6 +127,15 @@ export const useInterview = () => {
     }
   };
 
+  // 🎯 අලුත් Skip Question ෆන්ක්ෂන් එක
+  const skipQuestion = () => {
+    window.speechSynthesis?.cancel();
+    if (recognitionRef.current) recognitionRef.current.stop();
+    handleUserMessage(
+      "I don't know the answer to this question. Please skip it and ask me the next technical question.",
+    );
+  };
+
   const toggleRecording = () => {
     if (isRecording) {
       recognitionRef.current?.stop();
@@ -115,17 +147,6 @@ export const useInterview = () => {
         console.error("Could not start recording", e);
       }
     }
-  };
-
-  const submitName = (name) => {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    setUserName(trimmed);
-    addMessage("user", trimmed);
-    const aiMsg = `Nice to meet you, ${trimmed}! What level are you targeting?`;
-    addMessage("ai", aiMsg);
-    speak(aiMsg);
-    setPhase(PHASES.LEVEL);
   };
 
   const submitLevel = (lvl) => {
@@ -148,21 +169,84 @@ export const useInterview = () => {
   };
 
   const startInterview = () => {
-    const welcomeText = `Hello ${userName}, let's start your ${level} ${role} interview. Are you ready?`;
+    const welcomeText = `Alright ${userName}, let's start your ${level} ${role} interview. Are you ready?`;
     addMessage("ai", welcomeText);
     speak(welcomeText);
     setPhase(PHASES.INTERVIEW);
   };
 
-  const endSession = () => {
+  const endSession = async () => {
     window.speechSynthesis?.cancel();
-    recognitionRef.current?.stop();
-    setPhase(PHASES.NAME);
-    setUserName("");
+    if (recognitionRef.current) recognitionRef.current.stop();
+    clearInterval(timerRef.current);
+
+    setPhase(PHASES.REPORT);
+    setIsEvaluating(true);
+
+    try {
+      const token = localStorage.getItem("authToken");
+
+      const response = await fetch(
+        "http://localhost:8080/api/v1/interview/evaluate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            userName,
+            email: userEmail,
+            level,
+            role,
+            chatHistory: chatMessages,
+          }),
+        },
+      );
+
+      let data = await response.json();
+
+      if (typeof data === "string") {
+        try {
+          const cleanedString = data
+            .replace(/```json/g, "")
+            .replace(/```/g, "")
+            .trim();
+          data = JSON.parse(cleanedString);
+        } catch (parseError) {
+          console.error("JSON parsing error:", parseError);
+          data = {
+            score: "N/A",
+            strengths: ["Completed the interview"],
+            weaknesses: ["Could not parse AI response"],
+            finalFeedback: "Report generated but format was invalid.",
+          };
+        }
+      }
+
+      setReport(data);
+    } catch (error) {
+      console.error("Failed to generate report:", error);
+    } finally {
+      setIsEvaluating(false);
+    }
+  };
+
+  const restartSession = () => {
+    window.speechSynthesis?.cancel();
+    if (recognitionRef.current) recognitionRef.current.stop();
+    clearInterval(timerRef.current);
+
+    setPhase(PHASES.LEVEL);
     setLevel("");
     setRole("");
-    setChatMessages(INITIAL_MESSAGES);
     setTimeLeft(30);
+    setReport(null);
+    setChatMessages([]);
+
+    const welcomeMsg = `Welcome back, ${userName}! Let's try again. What level are you targeting?`;
+    setChatMessages([{ speaker: "ai", text: welcomeMsg }]);
+    speak(welcomeMsg);
   };
 
   return {
@@ -175,12 +259,15 @@ export const useInterview = () => {
     isRecording,
     isSpeaking,
     timeLeft,
+    report,
+    isEvaluating,
     toggleRecording,
-    submitName,
+    skipQuestion, // 🎯 Export කළා
     submitLevel,
     submitRole,
     startInterview,
-    endSession,
+    endSession, // 🎯 Export කළා (මේකෙන් Report එක ගන්නවා)
+    restartSession, // 🎯 Export කළා
     handleUserMessage,
   };
 };

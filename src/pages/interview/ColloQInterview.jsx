@@ -1,15 +1,26 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, SkipForward, Square } from "lucide-react";
+import {
+  Mic,
+  MicOff,
+  SkipForward,
+  Square,
+  Clock,
+  CheckCircle,
+  AlertTriangle,
+  Star,
+  Download,
+  X, // 🎯 Exit Icon එක
+} from "lucide-react";
 import { useInterview } from "../../hooks/useInterview";
-import Logo from "../../component/Logo"
+import Logo from "../../component/Logo";
+import { useNavigate } from "react-router-dom"; // 🎯 Dashboard එකට යන්න
 
 const LEVELS = ["Intern", "Associate", "Junior", "Mid-level", "Senior"];
 const ROLES = ["Frontend", "Backend", "Fullstack", "DevOps", "Data Science"];
 
-// Animated waveform shown during speaking / recording
 const Waveform = ({ active, color }) => (
-  <div className="flex items-end gap-3px h-5">
+  <div className="flex items-end gap-[3px] h-5">
     {Array.from({ length: 14 }).map((_, i) => (
       <motion.div
         key={i}
@@ -25,13 +36,12 @@ const Waveform = ({ active, color }) => (
           ease: "easeInOut",
         }}
         style={{ background: color }}
-        className="w-3px rounded-full"
+        className="w-[3px] rounded-full"
       />
     ))}
   </div>
 );
 
-// Single chat bubble
 const Bubble = ({ msg, index }) => (
   <motion.div
     key={index}
@@ -43,8 +53,8 @@ const Bubble = ({ msg, index }) => (
     <div
       className={`max-w-[68%] px-5 py-3 text-[15px] leading-relaxed ${
         msg.speaker === "user"
-          ? "bg-[#2B1800] text-gray-100 rounded-2xl rounded-tr-4px"
-          : "bg-[#1C1C1C] text-gray-200 rounded-2xl rounded-tl-4px border border-white/5"
+          ? "bg-[#2B1800] text-gray-100 rounded-2xl rounded-tr-[4px]"
+          : "bg-[#1C1C1C] text-gray-200 rounded-2xl rounded-tl-[4px] border border-white/5"
       }`}
     >
       {msg.text}
@@ -53,6 +63,7 @@ const Bubble = ({ msg, index }) => (
 );
 
 const ColloQInterview = () => {
+  const navigate = useNavigate(); // 🎯 Route කරන්න
   const {
     phase,
     PHASES: P,
@@ -60,44 +71,25 @@ const ColloQInterview = () => {
     isRecording,
     isSpeaking,
     timeLeft,
+    report,
+    isEvaluating,
     toggleRecording,
-    submitName,
+    skipQuestion, // 🎯 අලුත් Skip එක
     submitLevel,
     submitRole,
     startInterview,
-    endSession,
+    endSession, // 🎯 End එක
+    restartSession, // 🎯 Restart එක
   } = useInterview();
 
-  const [nameInput, setNameInput] = useState("");
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
-  const handleNameSubmit = () => {
-    if (!nameInput.trim()) return;
-    submitName(nameInput);
-    setNameInput("");
-  };
-
-  // ── Bottom controls that change per phase ──────────────────────────────────
   const renderControls = () => {
     switch (phase) {
-      case P.NAME:
-        return (
-          <input
-            autoFocus
-            type="text"
-            value={nameInput}
-            onChange={(e) => setNameInput(e.target.value)}
-            placeholder="Type your name..."
-            onKeyDown={(e) => e.key === "Enter" && handleNameSubmit()}
-            className="w-full max-w-2xl bg-transparent border border-[#FF6B00] rounded-full px-7 py-4 text-white placeholder-gray-600 focus:outline-none text-base caret-[#FF6B00]"
-          />
-        );
-
       case P.LEVEL:
         return (
           <div className="flex gap-3 flex-wrap justify-center">
@@ -142,7 +134,6 @@ const ColloQInterview = () => {
       case P.INTERVIEW:
         return (
           <div className="flex flex-col items-center gap-5 w-full">
-            {/* Waveform indicator */}
             <div className="h-5 flex items-center">
               {isSpeaking || isRecording ? (
                 <Waveform active color={isSpeaking ? "#FF6B00" : "#60a5fa"} />
@@ -159,9 +150,7 @@ const ColloQInterview = () => {
               )}
             </div>
 
-            {/* Action buttons row */}
             <div className="flex items-center gap-3">
-              {/* Mic button */}
               <button
                 onClick={toggleRecording}
                 disabled={isSpeaking}
@@ -176,23 +165,26 @@ const ColloQInterview = () => {
                 {isRecording ? <MicOff size={20} /> : <Mic size={20} />}
               </button>
 
-              {/* Skip */}
-              <button className="flex items-center gap-2 bg-transparent hover:bg-white/5 text-gray-400 hover:text-gray-200 font-medium px-5 py-2.5 rounded-full border border-gray-800 hover:border-gray-600 transition-all text-sm">
+              {/* 🎯 අලුත් onClick එක */}
+              <button
+                onClick={skipQuestion}
+                disabled={isSpeaking || isRecording}
+                className="flex items-center gap-2 bg-transparent hover:bg-white/5 text-gray-400 hover:text-gray-200 font-medium px-5 py-2.5 rounded-full border border-gray-800 hover:border-gray-600 transition-all text-sm disabled:opacity-50"
+              >
                 <SkipForward size={15} />
                 Skip Question
               </button>
 
-              {/* End session */}
+              {/* 🎯 අලුත් onClick එක */}
               <button
                 onClick={endSession}
                 className="flex items-center gap-2 bg-transparent hover:bg-red-950/40 text-red-500 font-medium px-5 py-2.5 rounded-full border border-red-900/60 hover:border-red-700 transition-all text-sm"
               >
                 <Square size={15} />
-                End Session
+                End & Get Report
               </button>
             </div>
 
-            {/* Status label */}
             {(isSpeaking || isRecording) && (
               <p className="text-xs text-gray-500">
                 {isSpeaking ? "AI is speaking…" : "Listening…"}
@@ -206,88 +198,198 @@ const ColloQInterview = () => {
     }
   };
 
+  const renderReportPhase = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex-1 overflow-y-auto w-full z-20 p-6"
+    >
+      <div className="max-w-4xl mx-auto flex flex-col">
+        <div className="bg-gray-900/80 p-8 rounded-3xl border border-gray-700 backdrop-blur-xl shadow-2xl">
+          <h2 className="text-3xl font-black mb-2 text-white text-center">
+            Interview Performance Overview
+          </h2>
+          <p className="text-gray-400 text-center mb-8">
+            Here is the AI expert's evaluation of your session.
+          </p>
+
+          {isEvaluating ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <div className="w-16 h-16 border-4 border-[#FF6B00] border-t-transparent rounded-full animate-spin mb-4"></div>
+              <h3 className="text-xl text-white font-bold">
+                Analyzing your performance...
+              </h3>
+              <p className="text-gray-500 text-sm mt-2">
+                Deepseek AI is generating your comprehensive report.
+              </p>
+            </div>
+          ) : report ? (
+            <div className="space-y-6">
+              <div className="bg-[#FF6B00]/10 border border-[#FF6B00]/30 p-6 rounded-2xl flex items-center justify-between">
+                <div>
+                  <h3 className="text-[#FF6B00] font-bold uppercase tracking-widest text-sm">
+                    Overall Score
+                  </h3>
+                  <p className="text-4xl font-black text-white mt-1">
+                    {report.score}
+                  </p>
+                </div>
+                <Star className="text-[#FF6B00] w-12 h-12" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                  <h3 className="text-green-400 font-bold flex items-center gap-2 mb-4">
+                    <CheckCircle size={18} /> Key Strengths
+                  </h3>
+                  <ul className="space-y-2 text-gray-300">
+                    {report.strengths?.map((item, i) => (
+                      <li key={i} className="flex gap-2 text-sm">
+                        <span className="text-green-500">•</span> {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                  <h3 className="text-red-400 font-bold flex items-center gap-2 mb-4">
+                    <AlertTriangle size={18} /> Areas to Improve
+                  </h3>
+                  <ul className="space-y-2 text-gray-300">
+                    {report.weaknesses?.map((item, i) => (
+                      <li key={i} className="flex gap-2 text-sm">
+                        <span className="text-red-500">•</span> {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              <div className="bg-gray-800/50 p-6 rounded-2xl border border-gray-700">
+                <h3 className="text-white font-bold mb-2">Final Verdict</h3>
+                <p className="text-gray-400 text-sm leading-relaxed">
+                  {report.finalFeedback}
+                </p>
+              </div>
+
+              <div className="flex justify-center pt-4 gap-4">
+                {/* 🎯 Go Back To Start */}
+                <button
+                  onClick={restartSession}
+                  className="flex items-center gap-2 bg-transparent border border-gray-600 hover:border-gray-400 text-white px-6 py-3 rounded-xl transition-colors font-semibold"
+                >
+                  Start New Session
+                </button>
+                <button
+                  onClick={() => navigate("/dashboard/candidate")}
+                  className="flex items-center gap-2 bg-transparent border border-gray-600 hover:border-gray-400 text-white px-6 py-3 rounded-xl transition-colors font-semibold"
+                >
+                  Exit to Dashboard
+                </button>
+                <button className="flex items-center gap-2 bg-[#FF6B00] hover:bg-[#e66000] text-white px-6 py-3 rounded-xl transition-colors font-semibold shadow-lg shadow-orange-500/20">
+                  <Download size={18} /> Download PDF
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center text-red-500 py-10">
+              Failed to load report. Please check if your backend is running.
+            </div>
+          )}
+        </div>
+      </div>
+    </motion.div>
+  );
+
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-gray-100 flex flex-col font-sans">
-      {/* ── Ambient glow ───────────────────────────────────────────────────── */}
+    <div className="h-screen overflow-hidden bg-[#0A0A0A] text-gray-100 flex flex-col font-sans">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 flex items-center justify-center"
       >
-        <div className="w-700px h-700px bg-[#FF6B00]/5 rounded-full blur-[120px]" />
+        <div className="w-[700px] h-[700px] bg-[#FF6B00]/5 rounded-full blur-[120px]" />
       </div>
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <header className="relative z-10 flex items-center px-6 py-4 border-b border-white/5">
+      <header className="relative z-10 flex items-center px-6 py-4 border-b border-white/5 shrink-0">
         <div className="flex items-center gap-2.5">
           <span className="w-2.5 h-2.5 rounded-full bg-[#FF6B00] block" />
-          {/* <span className="font-bold text-white text-[17px] tracking-tight">
-            ColloQ
-          </span> */}
           <Logo />
         </div>
 
-        {/* Timer — visible only in interview phase */}
-        {phase === P.INTERVIEW && (
-          <div
-            className={`ml-auto flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-mono font-semibold border ${
-              timeLeft < 10
-                ? "border-red-700/60 text-red-400 bg-red-950/30"
-                : "border-white/10 text-gray-400 bg-white/5"
-            }`}
-          >
-            {timeLeft}s
-          </div>
-        )}
-      </header>
-
-      {/* ── Chat messages ───────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-6 py-8">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <AnimatePresence initial={false}>
-            {chatMessages.map((msg, idx) => (
-              <Bubble key={idx} msg={msg} index={idx} />
-            ))}
-          </AnimatePresence>
-
-          {/* AI typing indicator */}
-          {isSpeaking && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex justify-start"
+        <div className="ml-auto flex items-center gap-4">
+          {phase === P.INTERVIEW && (
+            <div
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-mono font-semibold border ${
+                timeLeft < 10
+                  ? "border-red-700/60 text-red-400 bg-red-950/30"
+                  : "border-white/10 text-gray-400 bg-white/5"
+              }`}
             >
-              <div className="bg-[#1C1C1C] border border-white/5 px-5 py-3 rounded-2xl rounded-tl-[4px] flex items-center gap-1.5">
-                {[0, 0.15, 0.3].map((delay, i) => (
-                  <motion.span
-                    key={i}
-                    animate={{ opacity: [0.3, 1, 0.3] }}
-                    transition={{ repeat: Infinity, duration: 1.2, delay }}
-                    className="w-1.5 h-1.5 rounded-full bg-gray-500 block"
-                  />
-                ))}
-              </div>
-            </motion.div>
+              {timeLeft}s
+            </div>
           )}
 
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
-
-      {/* ── Bottom controls ─────────────────────────────────────────────────── */}
-      <div className="relative z-10 flex justify-center items-center px-6 py-6 border-t border-white/5">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={phase}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.2 }}
-            className="w-full flex justify-center"
+          {/* 🎯 Dashboard එකට ආපහු යන Exit බටන් එකක් දැම්මා */}
+          <button
+            onClick={() => navigate("/dashboard/candidate")}
+            className="p-2 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
+            title="Exit to Dashboard"
           >
-            {renderControls()}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+            <X size={20} />
+          </button>
+        </div>
+      </header>
+
+      {phase !== P.REPORT && (
+        <div className="relative z-10 flex-1 overflow-y-auto px-6 py-8">
+          <div className="max-w-2xl mx-auto space-y-4">
+            <AnimatePresence initial={false}>
+              {chatMessages.map((msg, idx) => (
+                <Bubble key={idx} msg={msg} index={idx} />
+              ))}
+            </AnimatePresence>
+
+            {isSpeaking && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex justify-start"
+              >
+                <div className="bg-[#1C1C1C] border border-white/5 px-5 py-3 rounded-2xl rounded-tl-[4px] flex items-center gap-1.5">
+                  {[0, 0.15, 0.3].map((delay, i) => (
+                    <motion.span
+                      key={i}
+                      animate={{ opacity: [0.3, 1, 0.3] }}
+                      transition={{ repeat: Infinity, duration: 1.2, delay }}
+                      className="w-1.5 h-1.5 rounded-full bg-gray-500 block"
+                    />
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
+        </div>
+      )}
+
+      {phase === P.REPORT && renderReportPhase()}
+
+      {phase !== P.REPORT && (
+        <div className="relative z-10 flex justify-center items-center px-6 py-6 border-t border-white/5 shrink-0">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={phase}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.2 }}
+              className="w-full flex justify-center"
+            >
+              {renderControls()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };
